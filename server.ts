@@ -548,16 +548,28 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 // ✅ Dynamic CORS Handler
+// app.use(cors({
+//   origin: (origin, callback) => {
+//     // Postman/mobile apps (ምንም origin የሌላቸው) ወይም በተፈቀዱት ዝርዝር ውስጥ ያሉትን ማስተናገድ
+//     if (!origin || allowedOrigins.includes(origin)) {
+//       return callback(null, true);
+//     }
+//     return callback(new Error('CORS Policy: ይህ Origin አልተፈቀደም!'));
+//   },
+//   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+//   allowedHeaders: ['Content-Type', 'Authorization'],
+//   credentials: true
+// }));
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Postman/mobile apps (ምንም origin የሌላቸው) ወይም በተፈቀዱት ዝርዝር ውስጥ ያሉትን ማስተናገድ
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     return callback(new Error('CORS Policy: ይህ Origin አልተፈቀደም!'));
   },
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'x-app-key', 'X-App-Key'], // 👈 x-app-key እዚህ ተጨምሯል
   credentials: true
 }));
 
