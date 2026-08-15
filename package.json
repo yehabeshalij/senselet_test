@@ -3,7 +3,7 @@
   "type": "module",
   "version": "1.0.0",
   "main": "index.js",
- "scripts": {
+  "scripts": {
     "dev": "tsx watch server.ts",
     "build": "prisma generate && tsc",
     "start": "node dist/server.js",
