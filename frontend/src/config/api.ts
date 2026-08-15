@@ -1,14 +1,3 @@
-// ============================================================================
-// 🌐 senselet_system — Centralized API configuration
-// ----------------------------------------------------------------------------
-// ይህ ፋይል ብቻ ነው "የት backend እንዳለ" የሚያውቀው። በሁሉም component ላይ የተበታተኑ
-// 'http://localhost:5000/...' string ዎችን በዚህ ፋይል import መተካት አለብን።
-//
-// dev ላይ:  .env ውስጥ ምንም ካላደረግህ ራሱ localhost ይጠቀማል።
-// prod ላይ:  Vercel/Netlify → Environment Variables ውስጥ
-//            VITE_API_ORIGIN=https://your-backend.onrender.com
-// ============================================================================
-
 export const API_ORIGIN: string =
   (import.meta as any).env?.VITE_API_ORIGIN || 'http://localhost:5000';
 
