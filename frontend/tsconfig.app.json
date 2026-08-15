@@ -8,7 +8,6 @@
     "skipLibCheck": true,
     "noEmit": true,
 
-    /* ሁሉንም ጥብቅ ቼኮች ማጥፊያ */
     "strict": false,
     "noImplicitAny": false,
     "strictNullChecks": false,
