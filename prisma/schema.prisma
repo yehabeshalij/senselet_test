@@ -1,0 +1,372 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// 1. የእቃው ሁኔታ (Status)
+enum ItemStatus {
+  IN_WAREHOUSE   // መጋዘን ገባ
+  LOADED         // መኪና ላይ ተጫነ
+  DELIVERED      // ለባለቤቱ ደረሰ
+}
+
+// 2. የነጋዴዎች (ባለቤቶች) መረጃ
+model Merchant {
+  id        String   @id @default(uuid())
+  name      String   // የሸቀጥ ባለቤት ስም
+  phone     String   @unique // በስልክ ቁጥራቸው ይለያሉ
+  items     Item[]
+  createdAt DateTime @default(now())
+}
+
+// 📌 አዲስ የተጨመረ፦ ያስረካቢዎችን ስም እና ስልክ ለይቶ በTemplate መልክ ለመያዝ
+model SenderTemplate {
+  id        String   @id @default(uuid())
+  name      String   // ያስረካቢ ስም
+  phone     String   @unique // ያስረካቢ ስልክ ቁጥር
+  items     Item[]   // ይህ አስረካቢ ያስገባቸው እቃዎች ዝርዝር
+  createdAt DateTime @default(now())
+}
+
+// 3. እያንዳንዱ መጋዘን የሚገባ እቃ (ደረጃ 1 እና 2)
+model Item {
+  id              String         @id @default(uuid())
+  merchantId      String
+  merchant        Merchant       @relation(fields: [merchantId], references: [id])
+  typeAndDetails  String         // የእቃ አይነት እና ዝርዝር
+  weightKg        Float          // ኪሎ ግራም
+  
+  // 🔄 ያስረካቢ መረጃ ከTemplate ጋር ተገናኝቷል
+  senderId        String
+  sender          SenderTemplate @relation(fields: [senderId], references: [id])
+  senderName      String         // ለቀጥታ ሪፖርት ማሳያ (Denormalized ለቀላል ኩዌሪ)
+  senderPhone     String         // ለቀጥታ ሪፖርት ማሳያ
+  
+  receiverName    String         // የተረካቢ ስም (ሰራተኛው)
+  status          ItemStatus     @default(IN_WAREHOUSE)
+  createdAt       DateTime       @default(now())
+  
+  // ከኤክሴል የጭነት ሪፖርት ጋር ማያያዣ (አማራጭ)
+  waybillId       String?
+  waybill         Waybill?       @relation(fields: [waybillId], references: [id])
+}
+
+// 4. የኤክሴል ፎርማት እና የሂሳብ ማጠቃለያ (ደረጃ 3)
+model Waybill {
+  id           String   @id @default(uuid())
+  plateNumber  String?  // ታርጋ ቁጥር (Manual)
+  driverName   String?  // ለሹፌር/ለመኪና (Manual)
+  totalRent    Float?   // አጠቃላይ ኪራይ (Manual)
+  carRent      Float?   // የመኪና ኪራይ (Manual)
+  generalExp   Float?   // ለጠቅላላ (Manual)
+  items        Item[]   // የተጫኑ እቃዎች ዝርዝር
+  smsSent      Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+
+
+model QuickExpense {
+  id           String   @id @default(uuid())
+  title        String
+  reason       String
+  amount       Float
+  category     String   @default("መደበኛ")
+  registeredBy String   @default("staff")
+  time         String
+  ethDate      String
+  ethMonth     String
+  gregDate     String
+  isLoan       Boolean  @default(false)
+  isReturned   Boolean  @default(false)
+  isIncome     Boolean  @default(false) // 👈 አዲስ የተጨመረ፡ የገቢ መዝገብ መሆኑን መለያ
+  ownerNote    String?  @default("")
+  // 👇 🎯 አዲስ የተጨመሩ (ለስህተት መሰረዣ እና ለአለቃው ሪፖርት)
+  isDeleted    Boolean   @default(false)     // የተሰረዘ መሆኑን ማወቂያ
+  deletedAt    DateTime?                     // የተሰረዘበት ቀን/ሰዓት
+  deleteReason String?   @default("")        // የመሰረዝ ምክንያት (አስፈላጊ ከሆነ)
+  createdAt    DateTime @default(now())
+}
+
+model merchantStatus {
+  id               String   @id @default(uuid())
+  merchantName     String
+  phoneNumber      String
+  goodsDescription String
+  status           String   @default("pending")
+  smsSent          Boolean  @default(false)
+  createdAt        DateTime @default(now())
+}
+
+model WarehouseReceipt {
+  id            String      @id @default(uuid())
+  receiptNo     String      @unique //  1. ድግግሞሽ የሚከላከል (@unique)
+  ethDate       String      // የኢትዮጵያ ቀን (ምሳሌ፦ ሀምሌ 16, 2018)
+  time          String      // የተመዘገበበት ሰዓት (ምሳሌ፦ 02:30 PM)
+  merchantName  String      // የባለቤት ሙሉ ስም
+  merchantPhone String?     // የባለቤት ስልክ ቁጥር (ግዴታ አይደለም)
+  senderName    String?     // የአስረካቢ ስም
+  senderPhone   String?     // የአስረካቢ ስልክ
+  receiverName  String?     // የተረካቢ ሰራተኛ ስም
+  carPlate      String?     // የመኪና ታርጋ ቁጥር (ግዴታ አይደለም)
+  totalWeight   Float       @default(0.0)
+  status        String      @default("RECEIVED")
+  smsSent       Boolean     @default(false) // 👈 🎯 አዲስ የተጨመረ፡ የ receipt SMS መላክ ሁኔታ
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @default(now()) @updatedAt
+  items         CargoItem[]
+}
+
+model CargoItem {
+  id               String           @id @default(uuid())
+  receiptId        String
+  receipt          WarehouseReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  description      String
+  weight           Float
+  category         String           @default("ደረቅ")
+  isLoaded         Boolean          @default(false)
+  loaderType       String?
+  isMultiPackage   Boolean          @default(false)
+  status          String           @default("በመጋዘን ያለ") // 👈 2. አዲስ፡ የእቃው ሁኔታ (በመጋዘን
+  rawWeightsInput  String?
+  packages         Json?            // የኬሻዎች ዝርዝር እና ON/OFF ዳታ ሙሉ በሙሉ ይይዛል
+  loadings      Loading[]
+  shortageNotes ShortageNote[]
+}
+
+
+enum TruckStatus {
+  ACTIVE     // አሁን በመጫን ላይ ያለ
+  ARCHIVED   // ጭነቱ ተጠናቅቆ ወደ ማህደር የገባ
+}
+
+
+model Truck {
+  id               String      @id @default(uuid())
+  plateNumber      String
+  truckType        String?
+  driverName       String?
+  driverPhone      String?
+  ownerName        String?
+  ownerPhone       String?
+
+  // 🔒 ለጊዜው string ብቻ - Login/Staff ሲስተም ሲጨመር ወደ staffId (relation) ይቀየራል
+  loaderStaff      String
+
+  entryDate        String?     // የገባበት ቀን (Ethiopian, frontend የሚያሳየው string)
+  loadingStartDate String?
+  completionDate   DateTime?   // ARCHIVED ሲሆን ብቻ ይሞላል
+
+  status           TruckStatus @default(ACTIVE)
+  isSaved          Boolean     @default(false)  // "💾 መረጃ መዝግብ" ተጭኖ እንደሆነ
+  isVerified       Boolean     @default(false)  // የክፍያ ማረጋገጫ ተቆልፎ እንደሆነ
+
+  // 💰 እነዚህ ተመኖች ውሳኔ በተደረገው መሰረት ሁልጊዜ ሊቀየሩ ስለሚችሉ (ቢሮ ወይም አስጫኙ)፣
+  // እያንዳንዱ Truck የራሱ የተመዘገበበት-ጊዜ ተመን ይይዛል (snapshot ከ LaborRateSetting)፣
+  // ግን ቢሮ ካሳሳተ ወይም ካስተካከለ በኋላም (እንደ ማህደር ገጹ ላይ እንዳደረግነው) ነፃ ሆኖ ሊስተካከል ይችላል።
+  gateRate         Float       @default(0.30)
+  truckRate        Float       @default(0.35)
+
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  loadings         Loading[]
+  shortageNotes    ShortageNote[]
+  nonKgLaborItems  NonKgLaborItem[]
+  truckAccount     TruckAccount?
+
+  @@index([status])
+  @@index([plateNumber])
+}
+
+
+// 🎯 ዋናው ledger (transaction log) - "የትኛው እቃ በስንት ኪ.ግ በየትኛው መኪና ላይ ተጫነ" የሚለውን
+// እያንዳንዱን ክስተት የራሱ row አድርጎ ይመዘግባል። ይሄ አካሄድ የሚከተሉትን ችግሮች በራሱ ይፈታል፦
+//   • አንድ እቃ ወደ 2፣ 3፣ ወይም ከዚያ በላይ መኪኖች ቢከፋፈል (ቅናሽ/leftover ቢጫን) ልዩ ኮድ አያስፈልገውም
+//   • "ስንት ቀርቷል?" = cargoItem.weight - SUM(active loadings) ብቻ ነው፣ የተለየ shortage
+//     field መያዝ አያስፈልግም (ቅናሹ ራሱ በራሱ ይሰላል)
+//   • "ይሄ መኪና ስንት ጭኗል?" = truckId ላይ SUM ብቻ ነው
+model Loading {
+  id          String   @id @default(uuid())
+
+  cargoItemId String
+  cargoItem   CargoItem @relation(fields: [cargoItemId], references: [id], onDelete: Cascade)
+
+  // ለ multi-package እቃዎች ብቻ ጥቅም ላይ ይውላል - CargoItem.packages (JSON) ውስጥ
+  // ላለው individual package's own "id" የሚያመለክት ነው (ለምሳሌ "pkg-172..." )።
+  // ነጠላ (multi-package ያልሆነ) እቃ ሲጫን null ይቀራል።
+  packageId   String?
+
+  truckId     String
+  truck       Truck    @relation(fields: [truckId], references: [id])
+
+  weight      Float
+  source      String   // 'የመጋዘን ጫኝ አውራጅ' | 'መኪናው ጭኖት የመጣ' | 'ከውጭ ጫኞች'
+  method      String?  // 'ከመጋዘን' | 'ከመኪና' | 'መኪናው የጫነው' | 'የውጭ ጫኞች'
+  loadedBy    String?   // 👈 አዲስ የተጨመረ — loadingRoute.ts truck.loaderStaff የሚልከውን ለመቀበል
+
+  isActive    Boolean  @default(true)   // false = ተወርዷል (unloaded)
+  unloadedAt  DateTime?
+
+  createdAt   DateTime @default(now())
+
+  @@index([truckId, isActive])
+  @@index([cargoItemId, isActive])
+}
+
+
+// ⚠️ ቅናሽ/ጉዳት ሪፖርት - ታሪካዊ መረጃ ብቻ ነው (ለምን እንደቀነሰ፣ ስንት እንደቀነሰ)።
+// "ስንት ቀርቷል" የሚለው ግን ከ Loading ledger ራሱ ይሰላል (ከላይ እንደተገለጸው) - ስለዚህ
+// ይህ ሠንጠረዥ ስሌት ላይ ቀጥታ ተጽዕኖ የለውም፣ ለሪፖርት/ኦዲት ብቻ ነው የሚያገለግለው።
+model ShortageNote {
+  id           String   @id @default(uuid())
+
+  cargoItemId  String
+  cargoItem    CargoItem @relation(fields: [cargoItemId], references: [id], onDelete: Cascade)
+
+  truckId      String    // የትኛው መኪና ላይ ሲጫን ነው ቅናሹ የተመዘገበው
+  truck        Truck     @relation(fields: [truckId], references: [id])
+
+  weight       Float
+  quantityText String?   // ምሳሌ፦ "2 ኬሻ ስኳር"
+  reason       String
+
+  createdAt    DateTime  @default(now())
+}
+
+
+// 📦 ከኪ.ግ ውጭ (ፍሬ-ተኮር) የሚከፈል የጫኝ ስራ - ማህደር ውስጥ በኋላ ሊጨመር የሚችል
+model NonKgLaborItem {
+  id        String   @id @default(uuid())
+
+  truckId   String
+  truck     Truck    @relation(fields: [truckId], references: [id])
+
+  name      String
+  qty       Float
+  rate      Float
+  cost      Float
+
+  createdAt DateTime @default(now())
+}
+
+// 💰 የመኪና አጠቃላይ ሂሳብ ስሌት (ተጭኖ ካለቀ በኋላ ቢሮ በእጅ የሚሞላው)
+model TruckAccount {
+  id           String   @id @default(uuid())
+  truckId      String   @unique
+  truck        Truck    @relation(fields: [truckId], references: [id])
+  totalRevenue Float    @default(0) // ከጫኑት ነጋዴዎች የተቀበለው ጠቅላላ ሂሳብ
+  truckPayment Float    @default(0) // ለመኪናው የሚሰጠው ሂሳብ (ስራ ማስኬጃ ተቀንሶ)
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+}
+
+
+// 💰 የክፍያ ተመን ታሪክ/ቅንብር - ቢሮ ወይም አስጫኙ በማንኛውም ጊዜ ሊቀይሩት ይችላሉ።
+// ሁልጊዜ የመጨረሻው (በ createdAt ትልቁ) row ነው "የአሁኑ ነባሪ ተመን" ተብሎ የሚወሰደው፤
+// አዲስ Truck ሲፈጠር ከዚህ ይነበብና ወደ Truck.gateRate/truckRate ይገለበጣል (snapshot)።
+// ታሪኩ ስለሚቀመጥ "መቼ ተመኑ ተቀየረ" የሚለውን ወደፊት ኦዲት ማድረግ ያስችላል።
+model LaborRateSetting {
+  id         String   @id @default(uuid())
+  gateRate   Float    @default(0.30)
+  truckRate  Float    @default(0.35)
+  changedBy  String?  // ለጊዜው string (staff/office ስም) - ወደፊት ወደ User relation ይቀየራል
+  createdAt  DateTime @default(now())
+}
+
+
+
+model FreightOrder {
+  id      String @id @default(uuid())
+  orderNo String @unique // ORD-001, ORD-002 ... በራሱ-ሰር ይፈጠራል
+  ethDate String // የኢትዮጵያ ቀን (frontend-ው date ብሎ የሚጠራው)
+  time    String
+
+  // የነጋዴው መረጃ
+  merchantName  String
+  merchantPhone String
+
+  // ጠቅላላ ኩንታል — ካልታወቀ null ሆኖ totalQuintalsUnknown=true ይሆናል
+  // (frontend-ው ላይ `number | 'ያልታወቀ'` የሚለውን ይወክላል)
+  totalQuintals        Float?
+  totalQuintalsUnknown Boolean @default(false)
+
+  destination String
+
+  // የተመደበ ሹፌር/ተሸካሚ እና የማጓጓዣ ዘዴ
+  transportType        String? // 'በሰው ኃይል (ተሸካሚ)' | 'ሃይሉክስ (የራሳችን)' | ወዘተ (frontend-ው union type)
+  driverName           String?
+  driverPhone          String?
+  truckPlateNo         String?
+  truckCapacityQuintal Float?
+
+  // የመጫን ሁኔታ / ጉድለት
+  partialLoadingIssue  String?
+  needsWarehousePickup Boolean @default(false)
+
+  // የስራው ደረጃ — ልክ frontend-ው ላይ እንዳለው Amharic string እንደ ቀጥታ value
+  status String  @default("መኪና አልተገኘም")
+  previousStatus String?              // 👈 አዲስ
+  isVoided       Boolean  @default(false)  // 👈 አዲስ
+  voidReason     String?              // 👈 አዲስ
+  notes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items           FreightItem[]
+  pickupLocations FreightPickupLocation[]
+}
+
+// አንድ ኦርደር ውስጥ ያሉ የእቃ ዝርዝሮች (FreightOrder.items[])
+model FreightItem {
+  id              String       @id @default(uuid())
+  orderId         String
+  order           FreightOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  name            String
+  unitCount       Int
+  unit            String       @default("ፍሬ")   // 👈 አዲስ፦ በፍሬ | እሽግ | ሊትር | ኬሻ | ሌላ
+  weightPerUnitKg Float?
+  isWeightUnknown Boolean      @default(false)
+}
+
+// አንድ ኦርደር ብዙ የመጫኛ ቦታ ሊኖረው ስለሚችል (FreightOrder.pickupLocations[])
+model FreightPickupLocation {
+  id           String       @id @default(uuid())
+  orderId      String
+  order        FreightOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  location     String
+  shipperName  String?
+  shipperPhone String?
+}
+
+
+model FeedbackEntry {
+  id        String   @id @default(uuid())
+  name      String   // የነጋዴው/ደንበኛው ስም
+  phone     String?  // ስልክ (አማራጭ)
+  message   String   // የሃሳቡ/ችግሩ ሙሉ ይዘት
+
+  // ክፍት → ለሃላፊ ተልኳል (ከሰራተኛ አቅም በላይ ከሆነ) → ተፈትቷል
+  status    String   @default("ክፍት")
+
+  staffNote String?  // ሰራተኛው የሰጠው ምላሽ/ማብራሪያ
+  ownerNote String?  // ሃላፊው የሰጠው የመጨረሻ ውሳኔ/ምላሽ (ችግሩ ከአቅም በላይ ሲሆን)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model TruckAccountingFile {
+  id         String   @id @default(uuid())
+  fileName   String
+  fileData   Bytes    // 👈 ራሱ ፋይሉ (binary) በ DB ውስጥ ስለሚቀመጥ ፈጽሞ አይጠፋም
+  mimeType   String   @default("application/octet-stream")
+  uploadedBy String?
+  uploadedAt DateTime @default(now())
+}
