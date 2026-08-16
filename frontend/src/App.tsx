@@ -30,9 +30,9 @@ export default function App() {
         fontSize: '14px',
         fontFamily: 'sans-serif'
       }}>
-        <span style={{ fontWeight: 'bold' }}>⚙️ የሰንሰለት ሲስተም መቆጣጠሪያ</span>
+        <span style={{ fontWeight: 'bold' }}>ሰንሰለት የደረቅ ጭነት አገልግሎት ድርጅት</span>
         <div style={{ display: 'flex', gap: '10px' }}>
-          <label style={{ marginRight: '5px' }}>የመሣሪያ ሚና ይምረጡ፦ </label>
+          <label style={{ marginRight: '5px' }}>የመጠቀሚያ ሚና ይምረጡ ፦ </label>
           <select 
             value={deviceRole} 
             onChange={(e) => setDeviceRole(e.target.value as any)}
