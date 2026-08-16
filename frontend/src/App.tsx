@@ -40,16 +40,16 @@ export default function App() {
           >
             {/* 🚚 አዲሱ የጭነት መከታተያ */}
 
-            <option value="receiver">ታብሌት 1 (እቃ ተረካቢ)</option>
-            <option value="loader">ታብሌት 2 (ጭነት ተቆጣጣሪ)</option>
-            <option value="office">የቢሮ ኮምፒውተር (PC)</option>
-            <option value="merchant">የነጋዴዎች ሁኔታ እና SMS ማዕከል</option>
-            <option value="freight-hub">🚚 የጭነት መከታተያ እና መዝገብ (Freight Hub)</option>
+            <option value="receiver">የመዝጋቢ ገጽ</option>
+            <option value="loader">የአስጫኝ ገጽ</option>
+            <option value="office">የቢሮ ተቆጣጣሪ</option>
+            <option value="merchant">የነጋዴዎች የእቃ ሚሴጅ መላኪያ</option>
+            <option value="freight-hub">የጭነት መከታተያ እና መመዝገቢያ </option>
 
             
             {/* የወጪ መቆጣጠሪያዎች */}
-            <option value="staff-expense">💵 የወጪ መመዝገቢያ (Staff Expense)</option>
-            <option value="owner-expense">👑 የባለቤት መቆጣጠሪያ ማዕከል (Owner 🔒)</option>
+            <option value="staff-expense">💵 የወጪ መመዝገቢያ</option>
+            <option value="owner-expense">👑 የሀላፊ ወጪና ገቢ መቆጣጠሪያ</option>
           </select>
         </div>
       </div>
