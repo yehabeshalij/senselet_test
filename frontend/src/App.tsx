@@ -48,8 +48,8 @@ export default function App() {
 
             
             {/* የወጪ መቆጣጠሪያዎች */}
-            <option value="staff-expense">💵 የወጪ መመዝገቢያ</option>
-            <option value="owner-expense">👑 የሀላፊ ወጪና ገቢ መቆጣጠሪያ</option>
+            <option value="staff-expense">የወጪ መመዝገቢያ</option>
+            <option value="owner-expense">የሀላፊ ወጪና ገቢ መቆጣጠሪያ</option>
           </select>
         </div>
       </div>
