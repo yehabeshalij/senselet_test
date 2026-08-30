@@ -1,8 +1,6 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
-
+import { prisma } from '../../../lib/prisma.js'; // ✅ path ካንተ folder structure ጋር አስተካክል
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // 📥 አዲስ ሸቀጥ መጋዘን ሲገባ የሚቀበል ኤፒአይ
 router.post('/receive', async (req, res) => {

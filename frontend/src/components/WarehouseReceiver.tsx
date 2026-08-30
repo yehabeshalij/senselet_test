@@ -7,24 +7,7 @@ import { WAREHOUSE_API_BASE, LOADING_API_BASE } from '../config/api';
 // -------------------------------------------------------------
 // 📖 VCF / VCard ዳታህ (እዚህ ውስጥ የሁሉንም VCF መረጃ ማስገባት ትችላለህ)
 // -------------------------------------------------------------
-const VCF_DATA = `BEGIN:VCARD
-VERSION:2.1
-N:;Samsung Helpline;;;
-FN:Samsung Helpline
-TEL;CELL:1800407267864
-END:VCARD
-BEGIN:VCARD
-VERSION:2.1
-N:;አልሙዲን መሀመድ;;;
-FN:አልሙዲን መሀመድ
-TEL;CELL:0911223344
-END:VCARD
-BEGIN:VCARD
-VERSION:2.1
-N:;ወይዘሮ አስቴር በቀለ;;;
-FN:ወይዘሮ አስቴር በቀለ
-TEL;CELL:0912345678
-END:VCARD`;
+const VCF_DATA = '';
 
 interface PackageItem {
   id: string;

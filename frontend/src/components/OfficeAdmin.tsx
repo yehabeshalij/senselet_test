@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import MerchantStatusCenter from './MerchantStatusCenter';
 import { LOADING_API_BASE as API_BASE } from '../config/api';
+import StaffManagement from './StaffManagement';
 
 async function apiCall(path: string, options?: RequestInit) {
   const res = await fetch(`${API_BASE}${path}`, {
@@ -54,7 +55,7 @@ function getEthiopianDate(date: Date): string {
 
 export default function OfficeAdmin() {
 //   const [activeTab, setActiveTab] = useState<'a1' | 'a2' | 'a3' | 'a4'>('a1');
-const [activeTab, setActiveTab] = useState<'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6' | 'a7'>('a1');
+const [activeTab, setActiveTab] = useState<'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a6' | 'a7'| 'a8'> ('a1');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   return (
@@ -93,6 +94,7 @@ const [activeTab, setActiveTab] = useState<'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a
   { key: 'a5', label: '📱 5. SMS ክትትል', icon: '📱', color: '#7c3aed' },
   { key: 'a6', label: '📁 6. የመኪና ሂሳብ ፋይሎች', icon: '📁', color: '#0d9488' },
   { key: 'a7', label: '💰 7. ገቢ/ወጪ (በቅርቡ)', icon: '💰', color: '#64748b' },
+  { key: 'a8', label: '👥 8. ሰራተኞች ማስተዳደሪያ', icon: '👥', color: '#334155' },
 ].map(t => (
     <button key={t.key} onClick={() => setActiveTab(t.key as any)} title={t.label}
       style={{ padding: sidebarCollapsed ? '11px 0' : '11px 14px', backgroundColor: activeTab === t.key ? t.color : '#f8fafc', color: activeTab === t.key ? '#fff' : '#334155', border: activeTab === t.key ? 'none' : '1px solid #e2e8f0', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: sidebarCollapsed ? '16px' : '13px', textAlign: sidebarCollapsed ? 'center' : 'left', transition: 'all 0.15s ease', boxShadow: activeTab === t.key ? '0 4px 6px -1px rgba(0,0,0,0.1)' : 'none' }}>
@@ -111,6 +113,7 @@ const [activeTab, setActiveTab] = useState<'a1' | 'a2' | 'a3' | 'a4' | 'a5' | 'a
 {activeTab === 'a5' && <MerchantStatusCenter />}
 {activeTab === 'a6' && <Achievement6 />}
 {activeTab === 'a7' && <PlaceholderTab title="💰 7. ገቢ እና ወጪ መቆጣጠሪያ" note=" Comming soon ...... የድርጅቱን ገቢ/ወጪ እና ዳታ የሚሰበሰብበት ገጽ ።" />}
+{activeTab === 'a8' && <StaffManagement theme="light" />}
         </div>
       </div>
 

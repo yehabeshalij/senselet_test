@@ -1,13 +1,15 @@
 import express from 'express';
 import type { Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../../lib/prisma.js';
 import ExcelJS from 'exceljs';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { requireRole } from '../../../middleware/requireStaffAuth.js';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+router.use(requireRole('RECEIVER', 'LOADER', 'OFFICE', 'OWNER'));
+
 
 
 const upload = multer({ storage: multer.memoryStorage() });
@@ -349,7 +351,7 @@ router.get('/trucks/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/loading/trucks
-router.post('/trucks', async (req: Request, res: Response) => {
+router.post('/trucks', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const { plateNumber, truckType, driverName, driverPhone, ownerName, ownerPhone, loaderStaff, entryDate, loadingStartDate } = req.body;
 
@@ -381,7 +383,7 @@ router.post('/trucks', async (req: Request, res: Response) => {
 });
 
 // PATCH /api/loading/trucks/:id
-router.patch('/trucks/:id', async (req: Request, res: Response) => {
+router.patch('/trucks/:id', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
     const { plateNumber, truckType, driverName, driverPhone, ownerName, ownerPhone, loaderStaff, markSaved } = req.body;
@@ -419,7 +421,7 @@ router.patch('/trucks/:id', async (req: Request, res: Response) => {
 });
 
 // DELETE /api/loading/trucks/:id
-router.delete('/trucks/:id', async (req: Request, res: Response) => {
+router.delete('/trucks/:id', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
 
@@ -477,7 +479,7 @@ router.delete('/trucks/:id', async (req: Request, res: Response) => {
 // =====================================================================
 
 // POST /api/loading/trucks/:truckId/load
-router.post('/trucks/:truckId/load', async (req: Request, res: Response) => {
+router.post('/trucks/:truckId/load', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const truckId = String(req.params.truckId);
     const { cargoItemId, packageId, weight, source, method, shortage } = req.body;
@@ -561,7 +563,7 @@ router.post('/trucks/:truckId/load', async (req: Request, res: Response) => {
 });
 
 // POST /api/loading/trucks/:truckId/load-batch
-router.post('/trucks/:truckId/load-batch', async (req: Request, res: Response) => {
+router.post('/trucks/:truckId/load-batch', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const truckId = String(req.params.truckId);
     const { source, method, items } = req.body;
@@ -637,7 +639,7 @@ router.post('/trucks/:truckId/load-batch', async (req: Request, res: Response) =
 });
 
 // POST /api/loading/loadings/:loadingId/unload
-router.post('/loadings/:loadingId/unload', async (req: Request, res: Response) => {
+router.post('/loadings/:loadingId/unload', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const loadingId = String(req.params.loadingId);
 
@@ -672,7 +674,7 @@ if (refreshed) {
 });
 
 // PATCH /api/loading/cargo-items/:id
-router.patch('/cargo-items/:id', async (req: Request, res: Response) => {
+router.patch('/cargo-items/:id', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
     const { category } = req.body;
@@ -690,7 +692,7 @@ router.patch('/cargo-items/:id', async (req: Request, res: Response) => {
 });
 
 // POST /api/loading/cargo-items/:cargoItemId/shortage
-router.post('/cargo-items/:cargoItemId/shortage', async (req: Request, res: Response) => {
+router.post('/cargo-items/:cargoItemId/shortage', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const cargoItemId = String(req.params.cargoItemId);
     const { truckId, weight, quantityText, reason } = req.body;
@@ -916,7 +918,7 @@ res.json({
 });
 
 // POST /api/loading/trucks/:truckId/confirm
-router.post('/trucks/:truckId/confirm', async (req: Request, res: Response) => {
+router.post('/trucks/:truckId/confirm', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const truckId = String(req.params.truckId);
 
@@ -937,7 +939,7 @@ router.post('/trucks/:truckId/confirm', async (req: Request, res: Response) => {
 // =====================================================================
 
 // PATCH /api/loading/trucks/:truckId/rates
-router.patch('/trucks/:truckId/rates', async (req: Request, res: Response) => {
+router.patch('/trucks/:truckId/rates', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const truckId = String(req.params.truckId);
     const { gateRate, truckRate } = req.body;
@@ -968,7 +970,7 @@ router.patch('/trucks/:truckId/rates', async (req: Request, res: Response) => {
 });
 
 // POST /api/loading/trucks/:truckId/non-kg-items
-router.post('/trucks/:truckId/non-kg-items', async (req: Request, res: Response) => {
+router.post('/trucks/:truckId/non-kg-items', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const truckId = String(req.params.truckId);
     const { name, qty, rate } = req.body;
@@ -991,7 +993,7 @@ router.post('/trucks/:truckId/non-kg-items', async (req: Request, res: Response)
 });
 
 // DELETE /api/loading/non-kg-items/:id
-router.delete('/non-kg-items/:id', async (req: Request, res: Response) => {
+router.delete('/non-kg-items/:id', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
     const item = await prisma.nonKgLaborItem.findUnique({ where: { id } });
@@ -1013,7 +1015,7 @@ router.delete('/non-kg-items/:id', async (req: Request, res: Response) => {
 });
 
 // PATCH /api/loading/trucks/:truckId/verify
-router.patch('/trucks/:truckId/verify', async (req: Request, res: Response) => {
+router.patch('/trucks/:truckId/verify', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const truckId = String(req.params.truckId);
     const truck = await prisma.truck.update({ where: { id: truckId }, data: { isVerified: true } });
@@ -1029,7 +1031,7 @@ router.patch('/trucks/:truckId/verify', async (req: Request, res: Response) => {
 // =====================================================================
 
 // GET /api/loading/rate-settings
-router.get('/rate-settings', async (_req: Request, res: Response) => {
+router.post('/rate-settings', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
     const latest = await prisma.laborRateSetting.findFirst({ orderBy: { createdAt: 'desc' } });
     res.json({ success: true, data: latest || { gateRate: 0.30, truckRate: 0.35 } });
@@ -1068,7 +1070,7 @@ function computeTruckAccount(totalRevenue: number, truckPayment: number) {
 }
 
 // GET /api/loading/trucks/:truckId/account
-router.get('/trucks/:truckId/account', async (req: Request, res: Response) => {
+router.get('/trucks/:truckId/account', requireRole('OFFICE', 'OWNER'), async (req, res) => {
   try {
     const truckId = String(req.params.truckId);
     const account = await prisma.truckAccount.findUnique({ where: { truckId } });
@@ -1082,7 +1084,7 @@ router.get('/trucks/:truckId/account', async (req: Request, res: Response) => {
 });
 
 // PATCH /api/loading/trucks/:truckId/account
-router.patch('/trucks/:truckId/account', async (req: Request, res: Response) => {
+router.patch('/trucks/:truckId/account', requireRole('OFFICE', 'OWNER'), async (req, res) => {
   try {
     const truckId = String(req.params.truckId);
     const { totalRevenue, truckPayment } = req.body;
@@ -1111,7 +1113,7 @@ router.patch('/trucks/:truckId/account', async (req: Request, res: Response) => 
 // =====================================================================
 // 📊 8. ወደ Excel መላክ (ካንተ ማንዋል ፎርማት ጋር የሚመሳሰል)
 // =====================================================================
-router.get('/trucks/:truckId/export-excel', async (req: Request, res: Response) => {
+router.get('/trucks/:truckId/export-excel', requireRole('OFFICE', 'OWNER'), async (req, res) => {
   try {
     const truckId = String(req.params.truckId);
     const truck = await prisma.truck.findUnique({ where: { id: truckId } });
@@ -1322,7 +1324,7 @@ const fileName = `ET${truckLabel}_${dateLabel}.xlsx`; // ምሳሌ: ETAAL2010_20
 });
 
 
-router.post('/truck-accounting-files', upload.single('file'), async (req: Request, res: Response) => {
+router.post('/truck-accounting-files', requireRole('OFFICE', 'OWNER'), upload.single('file'), async (req, res) => {
   try {
     if (!req.file) { res.status(400).json({ success: false, error: 'ፋይል አልተመረጠም' }); return; }
     const record = await prisma.truckAccountingFile.create({
@@ -1341,7 +1343,7 @@ router.post('/truck-accounting-files', upload.single('file'), async (req: Reques
   }
 });
 
-router.get('/truck-accounting-files', async (_req: Request, res: Response) => {
+router.get('/truck-accounting-files', requireRole('OFFICE', 'OWNER'), async (req, res) => {
   try {
     const files = await prisma.truckAccountingFile.findMany({
       orderBy: { uploadedAt: 'desc' },
@@ -1354,7 +1356,7 @@ router.get('/truck-accounting-files', async (_req: Request, res: Response) => {
 });
 
 // 📥 ራሱ ፋይሉን ማውረጃ (DB ውስጥ ካለው binary data)
-router.get('/truck-accounting-files/:id/download', async (req: Request, res: Response) => {
+router.get('/truck-accounting-files/:id/download', requireRole('OFFICE', 'OWNER'), async (req, res) => {
   try {
     const id = String(req.params.id);
     const file = await prisma.truckAccountingFile.findUnique({ where: { id } });
@@ -1367,7 +1369,7 @@ router.get('/truck-accounting-files/:id/download', async (req: Request, res: Res
   }
 });
 
-router.delete('/truck-accounting-files/:id', async (req: Request, res: Response) => {
+router.delete('/truck-accounting-files/:id', requireRole('OFFICE', 'OWNER'), async (req, res) => {
   try {
     const id = String(req.params.id);
     await prisma.truckAccountingFile.delete({ where: { id } });

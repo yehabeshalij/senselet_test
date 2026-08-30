@@ -370,3 +370,49 @@ model TruckAccountingFile {
   uploadedBy String?
   uploadedAt DateTime @default(now())
 }
+
+
+// 🔐 አዲስ የተጨመረ፦ ለ7ቱ ሰራተኞች Authentication ስርዓት (schema.prisma መጨረሻ ላይ ጨምር)
+
+
+
+enum StaffRole {
+  RECEIVER       // WarehouseReceiver.tsx
+  LOADER         // LoadingController.tsx
+  FREIGHT_HUB    // FreightDispatchHub.tsx
+  MERCHANT_SMS   // MerchantStatusCenter.tsx
+  OFFICE         // OfficeAdmin.tsx — ሰራተኛ ማስተዳደር ይችላል
+  OWNER          // OwnerDashboard.tsx — ሰራተኛ ማስተዳደር ይችላል
+  STAFF_EXPENSE  // StaffDashboard.tsx
+}
+
+model Staff {
+  id           String      @id @default(uuid())
+  fullName     String
+  username     String      @unique
+  pinHash      String
+  roles        StaffRole[]   // 👈 ከ single role ወደ array ተቀይሯል
+
+  isActive     Boolean     @default(true)
+  createdBy    String?
+  lastLoginAt  DateTime?
+
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  sessions     StaffSession[]
+
+  @@index([username])
+}
+
+// 🔒 እያንዳንዱ login አንድ session ይፈጥራል — ከ2 device በላይ ከሆነ የቆየው ይሰረዛል
+model StaffSession {
+  id          String   @id @default(uuid())
+  staffId     String
+  staff       Staff    @relation(fields: [staffId], references: [id], onDelete: Cascade)
+  deviceLabel String?  // browser/OS መለያ (ለማወቅ ብቻ)
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime // 8 ሰዓት በኋላ
+
+  @@index([staffId])
+}

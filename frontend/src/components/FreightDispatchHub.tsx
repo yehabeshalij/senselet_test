@@ -328,9 +328,14 @@ export default function FreightDispatchHub() {
   const [responseNoteInput, setResponseNoteInput] = useState('');
   const [responderName, setResponderName] = useState(''); // 🆕 ደረጃ 3 - የፈታው ሰው ስም
 
-  // 🆕 ደረጃ 4/6 - የኮንታክት መምረጫ መክፈቻ/መዝጊያ
+  // // 🆕 ደረጃ 4/6 - የኮንታክት መምረጫ መክፈቻ/መዝጊያ
+  // const [showDriverContactPicker, setShowDriverContactPicker] = useState(false);
+  // const [showFeedbackContactPicker, setShowFeedbackContactPicker] = useState(false);
+
+    // 🆕 ደረጃ 4/6 - የኮንታክት መምረጫ መክፈቻ/መዝጊያ
   const [showDriverContactPicker, setShowDriverContactPicker] = useState(false);
   const [showFeedbackContactPicker, setShowFeedbackContactPicker] = useState(false);
+  const [showMerchantContactPicker, setShowMerchantContactPicker] = useState(false); // 🆕
 
   const [merchantName, setMerchantName] = useState('');
   const [merchantPhone, setMerchantPhone] = useState('');
@@ -422,9 +427,20 @@ export default function FreightDispatchHub() {
     setItems([...items, { id: String(Date.now()), name: '', unitCount: 0, unit: 'ፍሬ', isWeightUnknown: false }]);
   };
 
+  // 🆕 በስህተት የተጨመረ እቃ ረድፍ ማጥፊያ
+const handleRemoveItem = (id: string) => {
+  if (items.length <= 1) return; // ቢያንስ 1 ረድፍ መቆየት አለበት
+  setItems(items.filter(it => it.id !== id));
+};
   const handleAddLocation = () => {
     setLocations([...locations, { location: '', shipperName: '', shipperPhone: '' }]);
   };
+
+  // 🆕 በስህተት የተጨመረ የመጫኛ ቦታ ረድፍ ማጥፊያ
+const handleRemoveLocation = (idx: number) => {
+  if (locations.length <= 1) return; // ቢያንስ 1 ቦታ መቆየት አለበት
+  setLocations(locations.filter((_, i) => i !== idx));
+};
 
   const handleCreateOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1243,9 +1259,9 @@ export default function FreightDispatchHub() {
 
       </div>
 
-      {isNewOrderModalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '16px' }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', maxWidth: '650px', width: '100%', maxHeight: '90vh', overflowY: 'auto', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+            {isNewOrderModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(15, 23, 42, 0.6)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', zIndex: 1000, padding: '16px', overflowY: 'auto' }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', maxWidth: '650px', width: '100%', maxHeight: 'calc(100vh - 32px)', overflowY: 'auto', padding: '24px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', margin: '16px auto' }}>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px' }}>
               <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '800', color: '#0f172a' }}>📝 የጭነት መመዝገቢያ መሙያ ፎርም</h3>
@@ -1266,16 +1282,26 @@ export default function FreightDispatchHub() {
                     style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
                   />
                 </div>
-                <div>
+                                <div>
                   <label style={{ fontSize: '11px', fontWeight: '800', color: '#475569', display: 'block', marginBottom: '4px' }}>የነጋዴው ስልክ *</label>
-                  <input
-                    type="tel"
-                    required
-                    value={merchantPhone}
-                    onChange={e => setMerchantPhone(e.target.value)}
-                    placeholder="09..."
-                    style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
-                  />
+                  <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                    <input
+                      type="tel"
+                      required
+                      value={merchantPhone}
+                      onChange={e => setMerchantPhone(e.target.value)}
+                      placeholder="09... "
+                      style={{ width: '100%', padding: '9px 40px 9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '12px', boxSizing: 'border-box' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowMerchantContactPicker(true)}
+                      title="ከኮንታክት ውስጥ ምረጥ"
+                      style={{ position: 'absolute', right: '4px', padding: '4px 8px', cursor: 'pointer', background: 'transparent', border: 'none', fontSize: '16px' }}
+                    >
+                      📖
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1285,42 +1311,56 @@ export default function FreightDispatchHub() {
                   <button type="button" onClick={handleAddItem} style={{ backgroundColor: '#e2e8f0', border: 'none', padding: '4px 8px', borderRadius: '4px', fontSize: '10px', fontWeight: '800', cursor: 'pointer' }}>➕ ተጨማሪ እቃ ጨምር</button>
                 </div>
 
-                {items.map((it, idx) => (
-                  <div key={it.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
-                    <input type="text" required placeholder="የእቃ አይነት (ጁስ ፣ MDF ፣ ኮምፖርሳቶ...)" value={it.name} onChange={e => {
-                      const newItems = [...items]; newItems[idx].name = e.target.value; setItems(newItems);
-                    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
+               {items.map((it, idx) => (
+  <div key={it.id} style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto auto', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+    <input type="text" required placeholder="የእቃ አይነት (ጁስ ፣ MDF ፣ ኮምፖርሳቶ...)" value={it.name} onChange={e => {
+      const newItems = [...items]; newItems[idx].name = e.target.value; setItems(newItems);
+    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
 
-                    {/* 🆕 ደረጃ 7 - placeholder "ብዛት" ብቻ፣ ነባሪ ቁጥር የለም */}
-                    <input type="number" required placeholder="ብዛት" value={it.unitCount || ''} onChange={e => {
-                      const newItems = [...items]; newItems[idx].unitCount = Number(e.target.value); setItems(newItems);
-                    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
+    <input type="number" required placeholder="ብዛት" value={it.unitCount || ''} onChange={e => {
+      const newItems = [...items]; newItems[idx].unitCount = Number(e.target.value); setItems(newItems);
+    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
 
-                    <select
-                      value={it.unit || 'ፍሬ'}
-                      onChange={e => {
-                        const newItems = [...items]; newItems[idx].unit = e.target.value; setItems(newItems);
-                      }}
-                      style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}
-                    >
-                      {UNIT_OPTIONS.map((u) => (
-                        <option key={u} value={u}>{u}</option>
-                      ))}
-                    </select>
+    <select
+      value={it.unit || 'ፍሬ'}
+      onChange={e => {
+        const newItems = [...items]; newItems[idx].unit = e.target.value; setItems(newItems);
+      }}
+      style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', fontWeight: '700' }}
+    >
+      {UNIT_OPTIONS.map((u) => (
+        <option key={u} value={u}>{u}</option>
+      ))}
+    </select>
 
-                    {/* 🆕 ደረጃ 7 - placeholder "ኪ.ግ" ብቻ፣ ነባሪ ቁጥር የለም */}
-                    <input type="number" disabled={it.isWeightUnknown} placeholder="ኪ.ግ" value={it.weightPerUnitKg || ''} onChange={e => {
-                      const newItems = [...items]; newItems[idx].weightPerUnitKg = Number(e.target.value); setItems(newItems);
-                    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', backgroundColor: it.isWeightUnknown ? '#e2e8f0' : '#fff' }} />
+    <input type="number" disabled={it.isWeightUnknown} placeholder="ኪ.ግ" value={it.weightPerUnitKg || ''} onChange={e => {
+      const newItems = [...items]; newItems[idx].weightPerUnitKg = Number(e.target.value); setItems(newItems);
+    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px', backgroundColor: it.isWeightUnknown ? '#e2e8f0' : '#fff' }} />
 
-                    <label style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700', cursor: 'pointer' }}>
-                      <input type="checkbox" checked={it.isWeightUnknown || false} onChange={e => {
-                        const newItems = [...items]; newItems[idx].isWeightUnknown = e.target.checked; setItems(newItems);
-                      }} />
-                      ኪሎው አልታወቀም
-                    </label>
-                  </div>
-                ))}
+    <label style={{ fontSize: '10px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '700', cursor: 'pointer' }}>
+      <input type="checkbox" checked={it.isWeightUnknown || false} onChange={e => {
+        const newItems = [...items]; newItems[idx].isWeightUnknown = e.target.checked; setItems(newItems);
+      }} />
+      ኪሎው አልታወቀም
+    </label>
+
+    {/* 🆕 ✖ ማጥፊያ — 1 ረድፍ ብቻ ሲቀር አይታይም (ቢያንስ 1 እቃ ግዴታ ስላለ) */}
+    {items.length > 1 && (
+      <button
+        type="button"
+        onClick={() => handleRemoveItem(it.id)}
+        title="ይህን እቃ ረድፍ አጥፋ"
+        style={{
+          backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca',
+          borderRadius: '6px', width: '26px', height: '26px', fontSize: '13px',
+          fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}
+      >
+        ✖
+      </button>
+    )}
+  </div>
+))}
 
                 <div style={{ marginTop: '10px', borderTop: '1px solid #e2e8f0', paddingTop: '8px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
                   <div>
@@ -1357,20 +1397,36 @@ export default function FreightDispatchHub() {
                 </div>
 
                 {locations.map((loc, idx) => (
-                  <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px', marginBottom: '8px' }}>
-                    <input type="text" placeholder={`ቦታ ${idx + 1} (ለምሳሌ፡ ዱከም)`} value={loc.location} onChange={e => {
-                      const newLocs = [...locations]; newLocs[idx].location = e.target.value; setLocations(newLocs);
-                    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
+  <div key={idx} style={{ display: 'grid', gridTemplateColumns: locations.length > 1 ? '1fr 1fr 1fr auto' : '1fr 1fr 1fr', gap: '8px', marginBottom: '8px', alignItems: 'center' }}>
+    <input type="text" placeholder={`ቦታ ${idx + 1} (ለምሳሌ፡ ዱከም)`} value={loc.location} onChange={e => {
+      const newLocs = [...locations]; newLocs[idx].location = e.target.value; setLocations(newLocs);
+    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
 
-                    <input type="text" placeholder="የአስጫኝ ስም" value={loc.shipperName} onChange={e => {
-                      const newLocs = [...locations]; newLocs[idx].shipperName = e.target.value; setLocations(newLocs);
-                    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
+    <input type="text" placeholder="የአስጫኝ ስም" value={loc.shipperName} onChange={e => {
+      const newLocs = [...locations]; newLocs[idx].shipperName = e.target.value; setLocations(newLocs);
+    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
 
-                    <input type="tel" placeholder="የአስጫኝ ስልክ" value={loc.shipperPhone} onChange={e => {
-                      const newLocs = [...locations]; newLocs[idx].shipperPhone = e.target.value; setLocations(newLocs);
-                    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
-                  </div>
-                ))}
+    <input type="tel" placeholder="የአስጫኝ ስልክ" value={loc.shipperPhone} onChange={e => {
+      const newLocs = [...locations]; newLocs[idx].shipperPhone = e.target.value; setLocations(newLocs);
+    }} style={{ padding: '6px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '11px' }} />
+
+    {/* 🆕 ✖ ማጥፊያ — 1 ቦታ ብቻ ሲቀር አይታይም */}
+    {locations.length > 1 && (
+      <button
+        type="button"
+        onClick={() => handleRemoveLocation(idx)}
+        title="ይህን ቦታ አጥፋ"
+        style={{
+          backgroundColor: '#fee2e2', color: '#dc2626', border: '1px solid #fecaca',
+          borderRadius: '6px', width: '26px', height: '26px', fontSize: '13px',
+          fontWeight: '900', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }}
+      >
+        ✖
+      </button>
+    )}
+  </div>
+))}
               </div>
 
               <div>
@@ -1671,14 +1727,14 @@ export default function FreightDispatchHub() {
         </div>
       )}
 
-      {/* 🆕 ደረጃ 6 - Feedback ኮንታክት መምረጫ ሞዳል */}
-      {showFeedbackContactPicker && (
+            {/* 🆕 የነጋዴ ኮንታክት መምረጫ ሞዳል */}
+      {showMerchantContactPicker && (
         <ContactPickerModal
-          onClose={() => setShowFeedbackContactPicker(false)}
+          onClose={() => setShowMerchantContactPicker(false)}
           onSelect={(name, phone) => {
-            setFbPhone(phone);
-            setFbName(prev => prev || name);
-            setShowFeedbackContactPicker(false);
+            setMerchantPhone(phone);
+            setMerchantName(prev => prev || name);
+            setShowMerchantContactPicker(false);
           }}
         />
       )}

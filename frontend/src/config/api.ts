@@ -12,11 +12,17 @@ export const WAREHOUSE_API_BASE = `${API_ORIGIN}/api/warehouse`;
 export const SMS_SEND_URL = `${API_ORIGIN}/api/sms/send`;
 export const CONTACTS_API_URL = `${API_ORIGIN}/api/contacts`;
 export const OWNER_VERIFY_URL = `${API_ORIGIN}/api/owner/verify-pin`;
+export const AUTH_API_BASE = `${API_ORIGIN}/api/auth`;
+export const STAFF_API_BASE = `${API_ORIGIN}/api/staff`;
+
+
 
 export async function apiFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const staffToken = localStorage.getItem('staff_token');
   const headers = {
     'Content-Type': 'application/json',
     ...(APP_SHARED_KEY ? { 'x-app-key': APP_SHARED_KEY } : {}),
+    ...(staffToken ? { Authorization: `Bearer ${staffToken}` } : {}),
     ...(options.headers || {}),
   };
   return fetch(url, { ...options, headers });

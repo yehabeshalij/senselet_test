@@ -10,5 +10,5 @@ export function requireAppKey(req: Request, res: Response, next: NextFunction) {
   }
   const provided = req.headers['x-app-key'];
   if (provided === expected) return next();
-  return res.status(401).json({ error: '🔒 ያልተፈቀደ መዳረሻ' });
+  return res.status(401).json({ error: '🔒 ያልተፈቀደ ' });
 }

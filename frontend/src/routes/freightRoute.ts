@@ -1,16 +1,18 @@
 import { Router } from 'express';
 import type { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../../lib/prisma.js';
+import { requireRole } from '../../../middleware/requireStaffAuth.js';
 const router = Router();
+router.use(requireRole('FREIGHT_HUB', 'OFFICE', 'OWNER'));
 
-const wrap =
-  (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
+const wrap = (fn: (req: Request, res: Response, next: NextFunction) => Promise<any>) =>
   (req: Request, res: Response, next: NextFunction) => {
     Promise.resolve(fn(req, res, next)).catch((err) => {
-      console.error('❌ Freight route error:', err);
-      res.status(500).json({ error: err.message || 'የውስጥ ስህተት ተከስቷል' });
+      console.error('❌ Route error:', err); // ✅ ሙሉ ዝርዝር በ server logs ብቻ ይቀመጣል
+      const isDev = process.env.NODE_ENV !== 'production';
+      res.status(500).json({
+        error: isDev ? (err.message || 'የውስጥ ስህተት ተከስቷል') : 'የውስጥ ስህተት ተከስቷል፣ እባክዎ ቆይተው ይሞክሩ'
+      });
     });
   };
 
@@ -348,8 +350,6 @@ router.post(
   })
 );
 
-// PATCH /feedback/:id/resolve — ሰራተኛ ወይም ሃላፊ ችግሩን ፈታ
-// resolvedBy: 'staff' | 'owner' — staffNote ወይም ownerNote ላይ ማስታወሻውን ይመዘግባል
 router.patch(
   '/feedback/:id/resolve',
   wrap(async (req: Request, res: Response) => {
