@@ -644,7 +644,7 @@ useEffect(() => {
                               type="number"
                               inputMode="decimal"
                               placeholder="ኪሎ"
-                              required
+                              // required
                               value={item.weight || ''}
                               onChange={e => handleCargoChange(index, 'weight', e.target.value)}
                               style={{ flex: '1', minWidth: '80px', padding: '8px 12px', border: '1px solid #94a3b8', borderRadius: '4px', height: '40px', boxSizing: 'border-box', fontSize: '14px' }}

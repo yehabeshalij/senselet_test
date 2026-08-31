@@ -698,8 +698,8 @@ const togglePayoutCollapse = (truckId: string) => {
         )}
       </div>
       <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
-        <button onClick={submitEditItem} style={{ flex: 1, padding: '10px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>💾 አስቀምጥ</button>
-        <button onClick={() => setEditModalItem(null)} style={{ flex: 1, padding: '10px', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>ተወው</button>
+        <button onClick={submitEditItem} style={{ flex: 1, padding: '10px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>💾 UPDATE</button>
+        <button onClick={() => setEditModalItem(null)} style={{ flex: 1, padding: '10px', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>ይቅር</button>
       </div>
     </div>
   </div>
@@ -760,7 +760,7 @@ const togglePayoutCollapse = (truckId: string) => {
             <div className="vehicle-form-grid">
               <div className="form-field-group">
                 <label className="form-field-label"><span>🚛</span> የመኪና ታርጋ *</label>
-                <input type="text" value={activeTruck?.plateNumber || ''} placeholder="አአ 3-B99999" onChange={e => updateActiveTruckField('plateNumber', e.target.value.toUpperCase())} className="form-input-box" />
+                <input type="text" value={activeTruck?.plateNumber || ''} placeholder="ET 3-A99999" onChange={e => updateActiveTruckField('plateNumber', e.target.value.toUpperCase())} className="form-input-box" />
               </div>
               <div className="form-field-group">
                 <label className="form-field-label" style={{ color: '#2563eb' }}><span>🚚</span> የመኪና አይነት *</label>
