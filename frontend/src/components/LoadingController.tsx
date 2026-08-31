@@ -1000,7 +1000,7 @@ const togglePayoutCollapse = (truckId: string) => {
                             <td style={{ padding: '10px 4px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
   <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
     <button type="button" onClick={() => handleLoadItemWithTruckRouting(item.id)} style={{ width: '100%', padding: '6px 4px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>✔️ ጫን</button>
-    <button type="button" onClick={() => openEditModal(item)} style={{ width: '100%', padding: '4px 3px', backgroundColor: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '9.5px', fontWeight: 'bold', cursor: 'pointer' }}>✏️ አርም</button>
+    <button type="button" onClick={() => openEditModal(item)} style={{ width: '100%', padding: '4px 3px', backgroundColor: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '9.5px', fontWeight: 'bold', cursor: 'pointer' }}>✏️ EDIT</button>
     {!item.isMultiPackage && (
       <button type="button" onClick={() => toggleShortageForm(item.id)} style={{ width: '100%', padding: '4px 3px', backgroundColor: shortage.hasShortage ? '#fee2e2' : '#f1f5f9', color: shortage.hasShortage ? '#b91c1c' : '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '9.5px', fontWeight: 'bold', cursor: 'pointer' }}>
         {shortage.hasShortage ? '⚠️ ሪፖርት አጥፋ' : '⚠️ ቅነሳ ሪፖርት'}
