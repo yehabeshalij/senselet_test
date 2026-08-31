@@ -211,6 +211,36 @@ useEffect(() => {
   const [selectedPackages, setSelectedPackages] = useState<{ [pkgId: string]: boolean }>({});
   const [shortageDetails, setShortageDetails] = useState<{ [id: string]: { hasShortage: boolean; shortageWeight: number; shortageReason: string; shortageItemQty: string } }>({});
 
+  const [editModalItem, setEditModalItem] = useState<WarehouseRow | null>(null);
+const [editForm, setEditForm] = useState({ merchantName: '', merchantPhone: '', description: '', weight: '' });
+
+const openEditModal = (item: WarehouseRow) => {
+  setEditModalItem(item);
+  setEditForm({
+    merchantName: item.merchantName,
+    merchantPhone: item.merchantPhone,
+    description: item.description,
+    weight: String(item.weight)
+  });
+};
+
+const submitEditItem = async () => {
+  if (!editModalItem) return;
+  try {
+    await apiPatch(`/warehouse-items/${editModalItem.id}/correct`, {
+      merchantName: editForm.merchantName.trim(),
+      merchantPhone: editForm.merchantPhone.trim(),
+      description: editForm.description.trim(),
+      ...(!editModalItem.isMultiPackage ? { weight: editForm.weight } : {})
+    });
+    showToast('✔️ መረጃው ተስተካክሏል', 'success');
+    setEditModalItem(null);
+    fetchWarehouseItems(warehousePage);
+  } catch (e) {
+    showApiError(e);
+  }
+};
+
   const handleSourceChange = (itemId: string, sourceValue: string) => {
     let defaultMethod = '';
     if (sourceValue === 'መኪናው ጭኖት የመጣ') defaultMethod = 'መኪናው ጭኖት የመጣው';
@@ -639,6 +669,42 @@ const togglePayoutCollapse = (truckId: string) => {
         </div>
       )}
 
+      {editModalItem && (
+  <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', overflowY: 'auto', zIndex: 10010, padding: '20px' }}>
+    <div style={{ backgroundColor: '#fff', padding: '25px', borderRadius: '12px', maxWidth: '460px', width: '100%', margin: '20px auto', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #e2e8f0', paddingBottom: '10px', marginBottom: '15px' }}>
+        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>✏️ የመዝገብ መረጃ አርም ({editModalItem.receiptNo})</h3>
+        <button onClick={() => setEditModalItem(null)} style={{ border: 'none', background: 'none', fontSize: '20px', cursor: 'pointer', color: '#64748b' }}>&times;</button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>👤 የነጋዴ ስም</label>
+          <input type="text" value={editForm.merchantName} onChange={e => setEditForm(f => ({ ...f, merchantName: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>📞 ስልክ</label>
+          <input type="text" value={editForm.merchantPhone} onChange={e => setEditForm(f => ({ ...f, merchantPhone: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
+        </div>
+        <div>
+          <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>📦 የእቃ መግለጫ</label>
+          <input type="text" value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
+        </div>
+        {!editModalItem.isMultiPackage && (
+          <div>
+            <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '4px' }}>⚖️ ኪ.ግ</label>
+            <input type="number" value={editForm.weight} onChange={e => setEditForm(f => ({ ...f, weight: e.target.value }))} style={{ width: '100%', padding: '9px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '13px', boxSizing: 'border-box' }} />
+            <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>* እቃው ተጭኖ ከጀመረ ክብደት መቀየር አይቻልም</span>
+          </div>
+        )}
+      </div>
+      <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
+        <button onClick={submitEditItem} style={{ flex: 1, padding: '10px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>💾 አስቀምጥ</button>
+        <button onClick={() => setEditModalItem(null)} style={{ flex: 1, padding: '10px', backgroundColor: '#f1f5f9', color: '#475569', border: '1px solid #cbd5e1', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>ተወው</button>
+      </div>
+    </div>
+  </div>
+)}
+
       {/* Header */}
       <div style={{ maxWidth: '1400px', margin: '0 auto 15px auto', backgroundColor: '#0f172a', color: '#fff', padding: '15px 20px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
         {/* <div>
@@ -932,15 +998,16 @@ const togglePayoutCollapse = (truckId: string) => {
                               )}
                             </td>
                             <td style={{ padding: '10px 4px', border: '1px solid #e2e8f0', textAlign: 'center' }}>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                <button type="button" onClick={() => handleLoadItemWithTruckRouting(item.id)} style={{ width: '100%', padding: '6px 4px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>✔️ ጫን</button>
-                                {!item.isMultiPackage && (
-                                  <button type="button" onClick={() => toggleShortageForm(item.id)} style={{ width: '100%', padding: '4px 3px', backgroundColor: shortage.hasShortage ? '#fee2e2' : '#f1f5f9', color: shortage.hasShortage ? '#b91c1c' : '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '9.5px', fontWeight: 'bold', cursor: 'pointer' }}>
-                                    {shortage.hasShortage ? '⚠️ ሪፖርት አጥፋ' : '⚠️ ቅነሳ ሪፖርት'}
-                                  </button>
-                                )}
-                              </div>
-                            </td>
+  <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+    <button type="button" onClick={() => handleLoadItemWithTruckRouting(item.id)} style={{ width: '100%', padding: '6px 4px', backgroundColor: '#16a34a', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '11px' }}>✔️ ጫን</button>
+    <button type="button" onClick={() => openEditModal(item)} style={{ width: '100%', padding: '4px 3px', backgroundColor: '#eff6ff', color: '#1d4ed8', border: '1px solid #bfdbfe', borderRadius: '4px', fontSize: '9.5px', fontWeight: 'bold', cursor: 'pointer' }}>✏️ አርም</button>
+    {!item.isMultiPackage && (
+      <button type="button" onClick={() => toggleShortageForm(item.id)} style={{ width: '100%', padding: '4px 3px', backgroundColor: shortage.hasShortage ? '#fee2e2' : '#f1f5f9', color: shortage.hasShortage ? '#b91c1c' : '#475569', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '9.5px', fontWeight: 'bold', cursor: 'pointer' }}>
+        {shortage.hasShortage ? '⚠️ ሪፖርት አጥፋ' : '⚠️ ቅነሳ ሪፖርት'}
+      </button>
+    )}
+  </div>
+</td>
                           </tr>
 
                           {shortage.hasShortage && !item.isMultiPackage && (

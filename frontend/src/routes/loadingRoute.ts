@@ -691,6 +691,64 @@ router.patch('/cargo-items/:id', requireRole('LOADER', 'OFFICE', 'OWNER'), async
   }
 });
 
+// PATCH /api/loading/warehouse-items/:cargoItemId/correct
+// 🆕 መዝጋቢው የተሳሳተውን ስም/ስልክ/መግለጫ/ክብደት ለማረም
+router.patch('/warehouse-items/:cargoItemId/correct', async (req: Request, res: Response) => {
+  try {
+    const cargoItemId = String(req.params.cargoItemId);
+    const { merchantName, merchantPhone, description, weight } = req.body;
+
+    const cargoItem = await prisma.cargoItem.findUnique({
+      where: { id: cargoItemId },
+      include: { loadings: true }
+    });
+    if (!cargoItem) {
+      res.status(404).json({ success: false, error: 'እቃው አልተገኘም' });
+      return;
+    }
+
+    // ✅ የነጋዴ ስም/ስልክ በደረሰኙ ላይ ማረም
+    if (merchantName !== undefined || merchantPhone !== undefined) {
+      await prisma.warehouseReceipt.update({
+        where: { id: cargoItem.receiptId },
+        data: {
+          ...(merchantName !== undefined ? { merchantName: String(merchantName).trim() } : {}),
+          ...(merchantPhone !== undefined ? { merchantPhone: String(merchantPhone).trim() } : {}),
+        }
+      });
+    }
+
+    const cargoUpdateData: any = {};
+    if (description !== undefined && String(description).trim()) {
+      cargoUpdateData.description = String(description).trim();
+    }
+
+    // ⚠️ ክብደት — እቃው ገና ካልተጫነ ብቻ ማረም ይፈቀዳል (ledger ላይ ላለመዛባት)
+    if (weight !== undefined) {
+      const hasActiveLoadings = cargoItem.loadings.some((l: any) => l.isActive);
+      if (hasActiveLoadings) {
+        res.status(400).json({ success: false, error: '⚠️ ይህ እቃ ተጭኖ ስለጀመረ ክብደት መቀየር አይቻልም — ስም/መግለጫ ብቻ ማስተካከል ይችላሉ' });
+        return;
+      }
+      const newWeight = Number(weight);
+      if (!newWeight || newWeight <= 0) {
+        res.status(400).json({ success: false, error: '⚠️ ትክክለኛ ክብደት ያስገቡ' });
+        return;
+      }
+      cargoUpdateData.weight = newWeight;
+    }
+
+    if (Object.keys(cargoUpdateData).length > 0) {
+      await prisma.cargoItem.update({ where: { id: cargoItemId }, data: cargoUpdateData });
+    }
+
+    res.json({ success: true, message: '✔️ ማስተካከያው ተመዝግቧል' });
+  } catch (error: any) {
+    console.error('❌ ማስተካከል አልተቻለም:', error);
+    res.status(500).json({ success: false, error: 'ማስተካከል አልተቻለም' });
+  }
+});
+
 // POST /api/loading/cargo-items/:cargoItemId/shortage
 router.post('/cargo-items/:cargoItemId/shortage', requireRole('LOADER', 'OFFICE', 'OWNER'), async (req: Request, res: Response) => {
   try {
@@ -1378,5 +1436,6 @@ router.delete('/truck-accounting-files/:id', requireRole('OFFICE', 'OWNER'), asy
     res.status(500).json({ success: false, error: 'ፋይል ማጥፋት አልተቻለም' });
   }
 });
+
 
 export default router;
