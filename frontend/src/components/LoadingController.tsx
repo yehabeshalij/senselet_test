@@ -171,6 +171,8 @@ useEffect(() => {
 }, [currentView, activeTruck?.id, fetchDashboardStats]);
 
 
+
+
 // 🔄 silent=true ስንልክ (ለምሳሌ ከ polling)፣ ስክሪኑ ላይ ምንም "በመጫን ላይ..." ብልጭታ አይታይም
 const fetchWarehouseItems = useCallback(async (page: number, silent: boolean = false) => {
   if (!silent) setWarehouseLoading(true);
@@ -256,6 +258,24 @@ const submitEditItem = async () => {
   } catch (e) {
     showApiError(e);
   }
+};
+
+// 📦 ነጠላ ኬሻ ኪ.ግ ሲስተካከል - modal ሳንዘጋ በቦታው ላይ ብቻ እናዘምናለን
+const updatePackageInModal = (pkgId: string, newWeight: number) => {
+  setEditModalItem(prev => prev ? {
+    ...prev,
+    remainingPackages: prev.remainingPackages.map(p => p.id === pkgId ? { ...p, weight: newWeight } : p)
+  } : prev);
+  fetchWarehouseItems(warehousePage, true); // 👈 ጀርባ ላይ ያለው ሠንጠረዥ በጸጥታ (silent) ብቻ ይዘምናል
+};
+
+// 🗑️ ነጠላ ኬሻ ሲጠፋ - modal ሳንዘጋ ያንን ኬሻ ብቻ ከዝርዝሩ እናጠፋለን
+const removePackageFromModal = (pkgId: string) => {
+  setEditModalItem(prev => prev ? {
+    ...prev,
+    remainingPackages: prev.remainingPackages.filter(p => p.id !== pkgId)
+  } : prev);
+  fetchWarehouseItems(warehousePage, true);
 };
 
   const handleSourceChange = (itemId: string, sourceValue: string) => {
@@ -713,6 +733,26 @@ const togglePayoutCollapse = (truckId: string) => {
             <span style={{ fontSize: '10.5px', color: '#94a3b8' }}>* እቃው ተጭኖ ከጀመረ ክብደት መቀየር አይቻልም</span>
           </div>
         )}
+        {editModalItem.isMultiPackage && (
+  <div>
+    <label style={{ fontSize: '12px', fontWeight: 'bold', color: '#475569', display: 'block', marginBottom: '6px' }}>
+      📦 የእያንዳንዱ ኬሻ ኪ.ግ (ማስተካከል/ማጥፋት)
+    </label>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '200px', overflowY: 'auto' }}>
+      {editModalItem.remainingPackages.map((pkg) => (
+        <PackageEditRow
+          key={pkg.id}
+          pkg={pkg}
+          cargoItemId={editModalItem.id}
+          // onSaved={() => { fetchWarehouseItems(warehousePage); setEditModalItem(null); }}
+          onSaved={(newWeight) => updatePackageInModal(pkg.id, newWeight)}
+          onDeleted={() => removePackageFromModal(pkg.id)}
+        />
+      ))}
+    </div>
+  </div>
+)}
+
       </div>
       <div style={{ display: 'flex', gap: '10px', marginTop: '18px' }}>
         <button onClick={submitEditItem} style={{ flex: 1, padding: '10px', backgroundColor: '#2563eb', color: '#fff', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>💾 UPDATE</button>
@@ -1445,3 +1485,58 @@ const togglePayoutCollapse = (truckId: string) => {
 
 
 
+function PackageEditRow({
+  pkg, cargoItemId, onSaved, onDeleted,
+}: { pkg: RemainingPackage; cargoItemId: string; onSaved: (newWeight: number) => void; onDeleted: () => void }) {
+  const [weight, setWeight] = useState(String(pkg.weight));
+  const [busy, setBusy] = useState(false);
+  const [justSaved, setJustSaved] = useState(false); // ✅ modal ሳይዘጋ አጭር "✔️ ተመዝግቧል" ማሳያ ብቻ
+
+  const handleSave = async () => {
+    const w = Number(weight);
+    if (!w || w <= 0) { alert('⚠️ ትክክለኛ ኪ.ግ ያስገቡ'); return; }
+    setBusy(true);
+    try {
+      await apiPatch(`/cargo-items/${cargoItemId}/packages/${pkg.id}`, { weight: w });
+      onSaved(w); // 👈 modal አይዘጋም
+      setJustSaved(true);
+      setTimeout(() => setJustSaved(false), 1500);
+    } catch (e: any) {
+      alert(`❌ ${e?.message || 'ማስተካከል አልተቻለም'}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`ኬሻ #${pkg.packageNo} (${pkg.weight} ኪ.ግ) ሙሉ በሙሉ ማጥፋት ይፈልጋሉ?`)) return;
+    setBusy(true);
+    try {
+      await apiDelete(`/cargo-items/${cargoItemId}/packages/${pkg.id}`);
+      onDeleted(); // 👈 modal አይዘጋም
+    } catch (e: any) {
+      alert(`❌ ${e?.message || 'ማጥፋት አልተቻለም'}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 10px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+      <span style={{ fontSize: '11.5px', fontWeight: 'bold', color: '#1e3a8a', minWidth: '60px' }}>ኬሻ #{pkg.packageNo}</span>
+      <input
+        type="number" value={weight} onChange={e => setWeight(e.target.value)}
+        style={{ width: '80px', padding: '5px 8px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '12px', boxSizing: 'border-box' }}
+      />
+      <span style={{ fontSize: '11px', color: '#64748b' }}>ኪ.ግ</span>
+      <button type="button" onClick={handleSave} disabled={busy}
+        style={{ padding: '5px 10px', backgroundColor: justSaved ? '#059669' : '#10b981', color: '#fff', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: busy ? 'not-allowed' : 'pointer' }}>
+        {justSaved ? '✔️' : '💾'}
+      </button>
+      <button type="button" onClick={handleDelete} disabled={busy}
+        style={{ padding: '5px 10px', backgroundColor: '#fee2e2', color: '#dc2626', border: 'none', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold', cursor: busy ? 'not-allowed' : 'pointer' }}>
+        🗑️
+      </button>
+    </div>
+  );
+}

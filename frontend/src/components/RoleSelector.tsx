@@ -7,7 +7,8 @@ const ROLE_TILES = [
   { role: 'FREIGHT_HUB',   label: '📊 የጭነት መከታተያና መመዝገቢያ',     color: '#2563eb' },
   { role: 'OFFICE',        label: '🏢 የቢሮ ተቆጣጣሪ',               color: '#334155' },
   { role: 'STAFF_EXPENSE', label: '📝 የወጪ መመዝገቢያ',             color: '#0d9488' },
-  { role: 'OWNER',         label: '💰 ሀላፊ ገቢና ወጪ መቆጣጠሪያ',      color: '#111827' },
+  // { role: 'OWNER',         label: '💰 ሀላፊ ገቢና ወጪ መቆጣጠሪያ',      color: '#111827' },
+  { role: 'OWNER',         label: '💰 ሀላፊ ገቢና ወጪ መቆጣጠሪያ',      color: '#b45309' },
 ];
 
 function getEthiopianDateTime() {

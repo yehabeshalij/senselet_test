@@ -92,145 +92,149 @@ async function getTruckLoadedWeight(truckId: string, filters?: { category?: stri
 // =====================================================================
 
 // GET /api/loading/warehouse-items?page=1&pageSize=20
-// router.get('/warehouse-items', async (req: Request, res: Response) => {
-//   try {
-//     const page = Math.max(1, Number(req.query.page) || 1);
-//     const pageSize = Math.max(1, Number(req.query.pageSize) || 20);
+router.get('/warehouse-items', async (req: Request, res: Response) => {
+  try {
+    const page = Math.max(1, Number(req.query.page) || 1);
+    const pageSize = Math.max(1, Number(req.query.pageSize) || 20);
 
 
-//     const candidateItems = await prisma.cargoItem.findMany({
-//   where: { status: { not: 'ተመልሷል' } },
-//   include: {
-//     receipt: true,
-//     loadings: true,
-//     shortageNotes: { orderBy: { createdAt: 'desc' }, take: 1 } // 👈 አዲስ - የቅናሽ ምክንያት ለማምጣት
-//   },
-//   orderBy: { receipt: { createdAt: 'asc' } }
-// });
+    const candidateItems = await prisma.cargoItem.findMany({
+  where: { status: { not: 'ተመልሷል' } },
+  include: {
+    receipt: true,
+    loadings: true,
+    shortageNotes: { orderBy: { createdAt: 'desc' }, take: 1 } // 👈 አዲስ - የቅናሽ ምክንያት ለማምጣት
+  },
+  orderBy: { receipt: { createdAt: 'asc' } }
+});
 
 
 
-//     const pendingRows = candidateItems
-//   .map((item: any) => ({ item, remaining: computeRemaining(item) }))
-//   .filter(({ remaining }: any) => remaining.remainingWeight > 0)
-//   .map(({ item, remaining }: any) => {
-//     let displayDescription = item.description;
+    const pendingRows = candidateItems
+  .map((item: any) => ({ item, remaining: computeRemaining(item) }))
+  .filter(({ remaining }: any) => remaining.remainingWeight > 0)
+  .map(({ item, remaining }: any) => {
+    let displayDescription = item.description;
 
 
-// if (item.isMultiPackage) {
+if (item.isMultiPackage) {
 //   displayDescription = updateDescriptionQuantity(item.description, remaining.remainingPkgCount);
 // } else if (remaining.remainingWeight < item.weight) {
-//   // ✅ ሁልጊዜ ከ ledger (loadings) በትክክል ከሚሰላው ቀሪ ክብደት ተነስተን የቀረውን ቁጥር እናሰላለን፤
-//   // ይሄ ማንኛውም አይነት ጭነት/ማውረድ ጥምረት ቢፈጠር (ብዙ መኪኖች፣ ከፊል ማውረድ ወዘተ) ሁልጊዜ ራሱን በራሱ ያስተካክላል
-//   const originalQty = parseLeadingQty(item.description);
-//   if (originalQty !== null) {
-//     const remainingQty = Math.max(0, Math.round(originalQty * remaining.remainingWeight / item.weight));
-//     displayDescription = updateDescriptionQuantity(item.description, remainingQty);
-//   }
-// }
+  displayDescription = item.description;
+} else if (remaining.remainingWeight < item.weight) {
+  // ✅ ሁልጊዜ ከ ledger (loadings) በትክክል ከሚሰላው ቀሪ ክብደት ተነስተን የቀረውን ቁጥር እናሰላለን፤
+  // ይሄ ማንኛውም አይነት ጭነት/ማውረድ ጥምረት ቢፈጠር (ብዙ መኪኖች፣ ከፊል ማውረድ ወዘተ) ሁልጊዜ ራሱን በራሱ ያስተካክላል
+  const originalQty = parseLeadingQty(item.description);
+  if (originalQty !== null) {
+    const remainingQty = Math.max(0, Math.round(originalQty * remaining.remainingWeight / item.weight));
+    displayDescription = updateDescriptionQuantity(item.description, remainingQty);
+  }
+}
 
-//     return {
-//   id: item.id,
-//   receiptId: item.receiptId,
-//   receiptNo: item.receipt.receiptNo,
-//   dateIn: item.receipt.ethDate,
-//   merchantName: item.receipt.merchantName,
-//   merchantPhone: item.receipt.merchantPhone,
-//   description: displayDescription,
-//   category: item.category,
-//   isMultiPackage: item.isMultiPackage,
-//   weight: remaining.remainingWeight,
-//   remainingPackages: remaining.remainingPkgs,
-//   shortageReason: item.shortageNotes?.[0]?.reason || null,
-//   // 👈 አዲስ - መዝጋቢው ሲቀበል የገባው መረጃ (እቃው ገና ሲገባ ማን እንደወረደው/በየትኛው ታርጋ)
-//   intakeLoaderType: item.loaderType || null,
-//   intakeCarPlate: item.receipt.carPlate || null
-// };
-//   });
-//   const search = ((req.query.search as string) || '').trim().toLowerCase();
-// const filteredRows = search
-//   ? pendingRows.filter((r: any) =>
-//       (r.merchantName || '').toLowerCase().includes(search) ||
-//       (r.merchantPhone || '').toLowerCase().includes(search) ||
-//       (r.receiptNo || '').toLowerCase().includes(search)
-//     )
-//   : pendingRows;
+    return {
+  id: item.id,
+  receiptId: item.receiptId,
+  receiptNo: item.receipt.receiptNo,
+  dateIn: item.receipt.ethDate,
+  merchantName: item.receipt.merchantName,
+  merchantPhone: item.receipt.merchantPhone,
+  description: displayDescription,
+  category: item.category,
+  isMultiPackage: item.isMultiPackage,
+  weight: remaining.remainingWeight,
+  remainingPackages: remaining.remainingPkgs,
+  shortageReason: item.shortageNotes?.[0]?.reason || null,
+  // 👈 አዲስ - መዝጋቢው ሲቀበል የገባው መረጃ (እቃው ገና ሲገባ ማን እንደወረደው/በየትኛው ታርጋ)
+  intakeLoaderType: item.loaderType || null,
+  intakeCarPlate: item.receipt.carPlate || null
+};
+  });
+  const search = ((req.query.search as string) || '').trim().toLowerCase();
+const filteredRows = search
+  ? pendingRows.filter((r: any) =>
+      (r.merchantName || '').toLowerCase().includes(search) ||
+      (r.merchantPhone || '').toLowerCase().includes(search) ||
+      (r.receiptNo || '').toLowerCase().includes(search)
+    )
+  : pendingRows;
 
-// const total = filteredRows.length;
-// const paged = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+const total = filteredRows.length;
+const paged = filteredRows.slice((page - 1) * pageSize, page * pageSize);
 
-// res.json({
-//   success: true,
-//   page,
-//   pageSize,
-//   total,
-//   totalPages: Math.max(1, Math.ceil(total / pageSize)),
-//   data: paged
-// });
-//   } catch (error: any) {
-//     console.error('❌ የመጋዘን እቃዎችን ማምጣት አልተቻለም:', error);
-//     res.status(500).json({ success: false, error: 'የመጋዘን እቃዎችን ማምጣት አልተቻለም' });
-//   }
-// });
-
-router.patch('/warehouse-items/:cargoItemId/correct', async (req: Request, res: Response) => {
-  try {
-    const cargoItemId = String(req.params.cargoItemId);
-    const { merchantName, merchantPhone, description, weight } = req.body;
-
-    const cargoItem = await prisma.cargoItem.findUnique({
-      where: { id: cargoItemId },
-      include: { loadings: true }
-    });
-    if (!cargoItem) {
-      res.status(404).json({ success: false, error: 'እቃው አልተገኘም' });
-      return;
-    }
-
-    // ✅ የነጋዴ ስም/ስልክ በደረሰኙ ላይ ማረም
-    if (merchantName !== undefined || merchantPhone !== undefined) {
-      await prisma.warehouseReceipt.update({
-        where: { id: cargoItem.receiptId },
-        data: {
-          ...(merchantName !== undefined ? { merchantName: String(merchantName).trim() } : {}),
-          ...(merchantPhone !== undefined ? { merchantPhone: String(merchantPhone).trim() } : {}),
-        }
-      });
-    }
-
-    const cargoUpdateData: any = {};
-    if (description !== undefined && String(description).trim()) {
-      cargoUpdateData.description = String(description).trim();
-    }
-
-    // 🆕 ቁልፍ ማስተካከያ፦ weight መቀየር ካልተቻለ (ቀድሞ ተጭኖ ከጀመረ) ሌላውን ማስተካከያ (ስም/መግለጫ)
-    // አያስተጓጉልም — ብቻ weight ለብቻው skip ይደረጋል፣ 400 ብሎ ጨርሶ አያቆምም
-    let weightSkipped = false;
-    if (weight !== undefined && !cargoItem.isMultiPackage) {
-      const hasActiveLoadings = cargoItem.loadings.some((l: any) => l.isActive);
-      const newWeight = Number(weight);
-      if (hasActiveLoadings) {
-        weightSkipped = true;
-      } else if (newWeight > 0) {
-        cargoUpdateData.weight = newWeight;
-      }
-    }
-
-    if (Object.keys(cargoUpdateData).length > 0) {
-      await prisma.cargoItem.update({ where: { id: cargoItemId }, data: cargoUpdateData });
-    }
-
-    res.json({
-      success: true,
-      message: weightSkipped
-        ? '✔️ ስም/መግለጫ ተስተካክሏል (እቃው ተጭኖ ስለጀመረ ክብደት አልተቀየረም)'
-        : '✔️ ማስተካከያው ተመዝግቧል'
-    });
+res.json({
+  success: true,
+  page,
+  pageSize,
+  total,
+  totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  data: paged
+});
   } catch (error: any) {
-    console.error('❌ ማስተካከል አልተቻለም:', error);
-    res.status(500).json({ success: false, error: 'ማስተካከል አልተቻለም' });
+    console.error('❌ የመጋዘን እቃዎችን ማምጣት አልተቻለም:', error);
+    res.status(500).json({ success: false, error: 'የመጋዘን እቃዎችን ማምጣት አልተቻለም' });
   }
 });
+
+// router.get('/warehouse-items', async (req: Request, res: Response) => {
+
+// router.patch('/warehouse-items/:cargoItemId/correct', async (req: Request, res: Response) => {
+//   try {
+//     const cargoItemId = String(req.params.cargoItemId);
+//     const { merchantName, merchantPhone, description, weight } = req.body;
+
+//     const cargoItem = await prisma.cargoItem.findUnique({
+//       where: { id: cargoItemId },
+//       include: { loadings: true }
+//     });
+//     if (!cargoItem) {
+//       res.status(404).json({ success: false, error: 'እቃው አልተገኘም' });
+//       return;
+//     }
+
+//     // ✅ የነጋዴ ስም/ስልክ በደረሰኙ ላይ ማረም
+//     if (merchantName !== undefined || merchantPhone !== undefined) {
+//       await prisma.warehouseReceipt.update({
+//         where: { id: cargoItem.receiptId },
+//         data: {
+//           ...(merchantName !== undefined ? { merchantName: String(merchantName).trim() } : {}),
+//           ...(merchantPhone !== undefined ? { merchantPhone: String(merchantPhone).trim() } : {}),
+//         }
+//       });
+//     }
+
+//     const cargoUpdateData: any = {};
+//     if (description !== undefined && String(description).trim()) {
+//       cargoUpdateData.description = String(description).trim();
+//     }
+
+//     // 🆕 ቁልፍ ማስተካከያ፦ weight መቀየር ካልተቻለ (ቀድሞ ተጭኖ ከጀመረ) ሌላውን ማስተካከያ (ስም/መግለጫ)
+//     // አያስተጓጉልም — ብቻ weight ለብቻው skip ይደረጋል፣ 400 ብሎ ጨርሶ አያቆምም
+//     let weightSkipped = false;
+//     if (weight !== undefined && !cargoItem.isMultiPackage) {
+//       const hasActiveLoadings = cargoItem.loadings.some((l: any) => l.isActive);
+//       const newWeight = Number(weight);
+//       if (hasActiveLoadings) {
+//         weightSkipped = true;
+//       } else if (newWeight > 0) {
+//         cargoUpdateData.weight = newWeight;
+//       }
+//     }
+
+//     if (Object.keys(cargoUpdateData).length > 0) {
+//       await prisma.cargoItem.update({ where: { id: cargoItemId }, data: cargoUpdateData });
+//     }
+
+//     res.json({
+//       success: true,
+//       message: weightSkipped
+//         ? '✔️ ስም/መግለጫ ተስተካክሏል (እቃው ተጭኖ ስለጀመረ ክብደት አልተቀየረም)'
+//         : '✔️ ማስተካከያው ተመዝግቧል'
+//     });
+//   } catch (error: any) {
+//     console.error('❌ ማስተካከል አልተቻለም:', error);
+//     res.status(500).json({ success: false, error: 'ማስተካከል አልተቻለም' });
+//   }
+// });
 
 // GET /api/loading/dashboard-stats/:truckId — ለ "ንቁ የጭነት ገጽ" ላይ ላለው ዳሽቦርድ
 router.get('/dashboard-stats/:truckId', async (req: Request, res: Response) => {
@@ -751,6 +755,62 @@ router.patch('/cargo-items/:id', requireRole('LOADER', 'OFFICE', 'OWNER'), async
 
 // PATCH /api/loading/warehouse-items/:cargoItemId/correct
 // 🆕 መዝጋቢው የተሳሳተውን ስም/ስልክ/መግለጫ/ክብደት ለማረም
+// router.patch('/warehouse-items/:cargoItemId/correct', async (req: Request, res: Response) => {
+//   try {
+//     const cargoItemId = String(req.params.cargoItemId);
+//     const { merchantName, merchantPhone, description, weight } = req.body;
+
+//     const cargoItem = await prisma.cargoItem.findUnique({
+//       where: { id: cargoItemId },
+//       include: { loadings: true }
+//     });
+//     if (!cargoItem) {
+//       res.status(404).json({ success: false, error: 'እቃው አልተገኘም' });
+//       return;
+//     }
+
+//     // ✅ የነጋዴ ስም/ስልክ በደረሰኙ ላይ ማረም
+//     if (merchantName !== undefined || merchantPhone !== undefined) {
+//       await prisma.warehouseReceipt.update({
+//         where: { id: cargoItem.receiptId },
+//         data: {
+//           ...(merchantName !== undefined ? { merchantName: String(merchantName).trim() } : {}),
+//           ...(merchantPhone !== undefined ? { merchantPhone: String(merchantPhone).trim() } : {}),
+//         }
+//       });
+//     }
+
+//     const cargoUpdateData: any = {};
+//     if (description !== undefined && String(description).trim()) {
+//       cargoUpdateData.description = String(description).trim();
+//     }
+
+//     // ⚠️ ክብደት — እቃው ገና ካልተጫነ ብቻ ማረም ይፈቀዳል (ledger ላይ ላለመዛባት)
+//     if (weight !== undefined) {
+//       const hasActiveLoadings = cargoItem.loadings.some((l: any) => l.isActive);
+//       if (hasActiveLoadings) {
+//         res.status(400).json({ success: false, error: '⚠️ ይህ እቃ ተጭኖ ስለጀመረ ክብደት መቀየር አይቻልም — ስም/መግለጫ ብቻ ማስተካከል ይችላሉ' });
+//         return;
+//       }
+//       const newWeight = Number(weight);
+//       if (!newWeight || newWeight <= 0) {
+//         res.status(400).json({ success: false, error: '⚠️ ትክክለኛ ክብደት ያስገቡ' });
+//         return;
+//       }
+//       cargoUpdateData.weight = newWeight;
+//     }
+
+//     if (Object.keys(cargoUpdateData).length > 0) {
+//       await prisma.cargoItem.update({ where: { id: cargoItemId }, data: cargoUpdateData });
+//     }
+
+//     res.json({ success: true, message: '✔️ ማስተካከያው ተመዝግቧል' });
+//   } catch (error: any) {
+//     console.error('❌ ማስተካከል አልተቻለም:', error);
+//     res.status(500).json({ success: false, error: 'ማስተካከል አልተቻለም' });
+//   }
+// });
+
 router.patch('/warehouse-items/:cargoItemId/correct', async (req: Request, res: Response) => {
   try {
     const cargoItemId = String(req.params.cargoItemId);
@@ -781,29 +841,126 @@ router.patch('/warehouse-items/:cargoItemId/correct', async (req: Request, res: 
       cargoUpdateData.description = String(description).trim();
     }
 
-    // ⚠️ ክብደት — እቃው ገና ካልተጫነ ብቻ ማረም ይፈቀዳል (ledger ላይ ላለመዛባት)
-    if (weight !== undefined) {
+    // 🆕 ቁልፍ ማስተካከያ፦ weight መቀየር ካልተቻለ (ቀድሞ ተጭኖ ከጀመረ) ሌላውን ማስተካከያ (ስም/መግለጫ)
+    // አያስተጓጉልም — ብቻ weight ለብቻው skip ይደረጋል፣ 400 ብሎ ጨርሶ አያቆምም
+    let weightSkipped = false;
+    if (weight !== undefined && !cargoItem.isMultiPackage) {
       const hasActiveLoadings = cargoItem.loadings.some((l: any) => l.isActive);
-      if (hasActiveLoadings) {
-        res.status(400).json({ success: false, error: '⚠️ ይህ እቃ ተጭኖ ስለጀመረ ክብደት መቀየር አይቻልም — ስም/መግለጫ ብቻ ማስተካከል ይችላሉ' });
-        return;
-      }
       const newWeight = Number(weight);
-      if (!newWeight || newWeight <= 0) {
-        res.status(400).json({ success: false, error: '⚠️ ትክክለኛ ክብደት ያስገቡ' });
-        return;
+      if (hasActiveLoadings) {
+        weightSkipped = true;
+      } else if (newWeight > 0) {
+        cargoUpdateData.weight = newWeight;
       }
-      cargoUpdateData.weight = newWeight;
     }
 
     if (Object.keys(cargoUpdateData).length > 0) {
       await prisma.cargoItem.update({ where: { id: cargoItemId }, data: cargoUpdateData });
     }
 
-    res.json({ success: true, message: '✔️ ማስተካከያው ተመዝግቧል' });
+    res.json({
+      success: true,
+      message: weightSkipped
+        ? '✔️ ተስተካክሏል (እቃው ተጭኖ ስለጀመረ ክብደት አልተቀየረም)'
+        : ' ተስተካክሏል'
+    });
   } catch (error: any) {
     console.error('❌ ማስተካከል አልተቻለም:', error);
     res.status(500).json({ success: false, error: 'ማስተካከል አልተቻለም' });
+  }
+});
+
+// PATCH /api/loading/cargo-items/:cargoItemId/packages/:packageId
+// 🆕 አንድ ነጠላ ኬሻ ኪ.ግ ማስተካከያ (እቃው multi-package ብቻ ላይ)
+router.patch('/cargo-items/:cargoItemId/packages/:packageId', async (req: Request, res: Response) => {
+  try {
+    const cargoItemId = String(req.params.cargoItemId);
+    const packageId = String(req.params.packageId);
+    const newWeight = Number(req.body.weight);
+
+    if (!newWeight || newWeight <= 0) {
+      res.status(400).json({ success: false, error: '⚠️ ትክክለኛ ኪ.ግ ያስገቡ' });
+      return;
+    }
+
+    const cargoItem = await prisma.cargoItem.findUnique({
+      where: { id: cargoItemId },
+      include: { loadings: true }
+    });
+    if (!cargoItem || !cargoItem.isMultiPackage) {
+      res.status(404).json({ success: false, error: 'እቃው አልተገኘም' });
+      return;
+    }
+
+    // 🔒 ኬሻው ቀድሞ ተጭኖ ከጀመረ ኪ.ግ መቀየር አይፈቀድም (ledger እንዳይዛባ)
+    const alreadyLoaded = cargoItem.loadings.some((l: any) => l.isActive && l.packageId === packageId);
+    if (alreadyLoaded) {
+      res.status(400).json({ success: false, error: '⚠️ ይህ ኬሻ ተጭኖ ስለጀመረ ኪ.ግ መቀየር አይቻልም' });
+      return;
+    }
+
+    const pkgs = Array.isArray(cargoItem.packages) ? (cargoItem.packages as any[]) : [];
+    const idx = pkgs.findIndex((p: any) => p.id === packageId);
+    if (idx === -1) {
+      res.status(404).json({ success: false, error: 'ኬሻው አልተገኘም' });
+      return;
+    }
+
+    pkgs[idx] = { ...pkgs[idx], weight: newWeight };
+    const totalWeight = pkgs.reduce((s: number, p: any) => s + Number(p.weight || 0), 0);
+
+    await prisma.cargoItem.update({
+      where: { id: cargoItemId },
+      data: { packages: pkgs, weight: totalWeight }
+    });
+
+    res.json({ success: true, message: '✔️ ኪ.ግ ተስተካክሏል' });
+  } catch (error: any) {
+    console.error('❌ ኬሻ ኪ.ግ ማስተካከል አልተቻለም:', error);
+    res.status(500).json({ success: false, error: 'ማስተካከል አልተቻለም' });
+  }
+});
+
+// DELETE /api/loading/cargo-items/:cargoItemId/packages/:packageId
+// 🆕 አንድ ነጠላ ኬሻ ሙሉ በሙሉ ማጥፊያ (በስህተት የገባ ኬሻ ካለ)
+router.delete('/cargo-items/:cargoItemId/packages/:packageId', async (req: Request, res: Response) => {
+  try {
+    const cargoItemId = String(req.params.cargoItemId);
+    const packageId = String(req.params.packageId);
+
+    const cargoItem = await prisma.cargoItem.findUnique({
+      where: { id: cargoItemId },
+      include: { loadings: true }
+    });
+    if (!cargoItem || !cargoItem.isMultiPackage) {
+      res.status(404).json({ success: false, error: 'እቃው አልተገኘም' });
+      return;
+    }
+
+    const alreadyLoaded = cargoItem.loadings.some((l: any) => l.isActive && l.packageId === packageId);
+    if (alreadyLoaded) {
+      res.status(400).json({ success: false, error: '⚠️ ይህ ኬሻ ተጭኖ ስለጀመረ ማጥፋት አይቻልም' });
+      return;
+    }
+
+    const pkgs = Array.isArray(cargoItem.packages) ? (cargoItem.packages as any[]) : [];
+    const filtered = pkgs.filter((p: any) => p.id !== packageId);
+    if (filtered.length === pkgs.length) {
+      res.status(404).json({ success: false, error: 'ኬሻው አልተገኘም' });
+      return;
+    }
+
+    const totalWeight = filtered.reduce((s: number, p: any) => s + Number(p.weight || 0), 0);
+
+    await prisma.cargoItem.update({
+      where: { id: cargoItemId },
+      data: { packages: filtered, weight: totalWeight }
+    });
+
+    res.json({ success: true, message: '🗑️ ኬሻው ተሰርዟል' });
+  } catch (error: any) {
+    console.error('❌ ኬሻ ማጥፋት አልተቻለም:', error);
+    res.status(500).json({ success: false, error: 'ማጥፋት አልተቻለም' });
   }
 });
 
