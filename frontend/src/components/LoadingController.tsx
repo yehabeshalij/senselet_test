@@ -224,16 +224,33 @@ const openEditModal = (item: WarehouseRow) => {
   });
 };
 
+// const submitEditItem = async () => {
+//   if (!editModalItem) return;
+//   try {
+//     await apiPatch(`/warehouse-items/${editModalItem.id}/correct`, {
+//       merchantName: editForm.merchantName.trim(),
+//       merchantPhone: editForm.merchantPhone.trim(),
+//       description: editForm.description.trim(),
+//       ...(!editModalItem.isMultiPackage ? { weight: editForm.weight } : {})
+//     });
+//     showToast('✔️ መረጃው ተስተካክሏል', 'success');
+//     setEditModalItem(null);
+//     fetchWarehouseItems(warehousePage);
+//   } catch (e) {
+//     showApiError(e);
+//   }
+// };
+
 const submitEditItem = async () => {
   if (!editModalItem) return;
   try {
-    await apiPatch(`/warehouse-items/${editModalItem.id}/correct`, {
+    const res = await apiPatch(`/warehouse-items/${editModalItem.id}/correct`, {
       merchantName: editForm.merchantName.trim(),
       merchantPhone: editForm.merchantPhone.trim(),
       description: editForm.description.trim(),
       ...(!editModalItem.isMultiPackage ? { weight: editForm.weight } : {})
     });
-    showToast('✔️ መረጃው ተስተካክሏል', 'success');
+    showToast(res.message || '✔️ መረጃው ተስተካክሏል', 'success');
     setEditModalItem(null);
     fetchWarehouseItems(warehousePage);
   } catch (e) {

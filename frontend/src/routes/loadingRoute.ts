@@ -92,87 +92,145 @@ async function getTruckLoadedWeight(truckId: string, filters?: { category?: stri
 // =====================================================================
 
 // GET /api/loading/warehouse-items?page=1&pageSize=20
-router.get('/warehouse-items', async (req: Request, res: Response) => {
+// router.get('/warehouse-items', async (req: Request, res: Response) => {
+//   try {
+//     const page = Math.max(1, Number(req.query.page) || 1);
+//     const pageSize = Math.max(1, Number(req.query.pageSize) || 20);
+
+
+//     const candidateItems = await prisma.cargoItem.findMany({
+//   where: { status: { not: 'ተመልሷል' } },
+//   include: {
+//     receipt: true,
+//     loadings: true,
+//     shortageNotes: { orderBy: { createdAt: 'desc' }, take: 1 } // 👈 አዲስ - የቅናሽ ምክንያት ለማምጣት
+//   },
+//   orderBy: { receipt: { createdAt: 'asc' } }
+// });
+
+
+
+//     const pendingRows = candidateItems
+//   .map((item: any) => ({ item, remaining: computeRemaining(item) }))
+//   .filter(({ remaining }: any) => remaining.remainingWeight > 0)
+//   .map(({ item, remaining }: any) => {
+//     let displayDescription = item.description;
+
+
+// if (item.isMultiPackage) {
+//   displayDescription = updateDescriptionQuantity(item.description, remaining.remainingPkgCount);
+// } else if (remaining.remainingWeight < item.weight) {
+//   // ✅ ሁልጊዜ ከ ledger (loadings) በትክክል ከሚሰላው ቀሪ ክብደት ተነስተን የቀረውን ቁጥር እናሰላለን፤
+//   // ይሄ ማንኛውም አይነት ጭነት/ማውረድ ጥምረት ቢፈጠር (ብዙ መኪኖች፣ ከፊል ማውረድ ወዘተ) ሁልጊዜ ራሱን በራሱ ያስተካክላል
+//   const originalQty = parseLeadingQty(item.description);
+//   if (originalQty !== null) {
+//     const remainingQty = Math.max(0, Math.round(originalQty * remaining.remainingWeight / item.weight));
+//     displayDescription = updateDescriptionQuantity(item.description, remainingQty);
+//   }
+// }
+
+//     return {
+//   id: item.id,
+//   receiptId: item.receiptId,
+//   receiptNo: item.receipt.receiptNo,
+//   dateIn: item.receipt.ethDate,
+//   merchantName: item.receipt.merchantName,
+//   merchantPhone: item.receipt.merchantPhone,
+//   description: displayDescription,
+//   category: item.category,
+//   isMultiPackage: item.isMultiPackage,
+//   weight: remaining.remainingWeight,
+//   remainingPackages: remaining.remainingPkgs,
+//   shortageReason: item.shortageNotes?.[0]?.reason || null,
+//   // 👈 አዲስ - መዝጋቢው ሲቀበል የገባው መረጃ (እቃው ገና ሲገባ ማን እንደወረደው/በየትኛው ታርጋ)
+//   intakeLoaderType: item.loaderType || null,
+//   intakeCarPlate: item.receipt.carPlate || null
+// };
+//   });
+//   const search = ((req.query.search as string) || '').trim().toLowerCase();
+// const filteredRows = search
+//   ? pendingRows.filter((r: any) =>
+//       (r.merchantName || '').toLowerCase().includes(search) ||
+//       (r.merchantPhone || '').toLowerCase().includes(search) ||
+//       (r.receiptNo || '').toLowerCase().includes(search)
+//     )
+//   : pendingRows;
+
+// const total = filteredRows.length;
+// const paged = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+
+// res.json({
+//   success: true,
+//   page,
+//   pageSize,
+//   total,
+//   totalPages: Math.max(1, Math.ceil(total / pageSize)),
+//   data: paged
+// });
+//   } catch (error: any) {
+//     console.error('❌ የመጋዘን እቃዎችን ማምጣት አልተቻለም:', error);
+//     res.status(500).json({ success: false, error: 'የመጋዘን እቃዎችን ማምጣት አልተቻለም' });
+//   }
+// });
+
+router.patch('/warehouse-items/:cargoItemId/correct', async (req: Request, res: Response) => {
   try {
-    const page = Math.max(1, Number(req.query.page) || 1);
-    const pageSize = Math.max(1, Number(req.query.pageSize) || 20);
+    const cargoItemId = String(req.params.cargoItemId);
+    const { merchantName, merchantPhone, description, weight } = req.body;
 
+    const cargoItem = await prisma.cargoItem.findUnique({
+      where: { id: cargoItemId },
+      include: { loadings: true }
+    });
+    if (!cargoItem) {
+      res.status(404).json({ success: false, error: 'እቃው አልተገኘም' });
+      return;
+    }
 
-    const candidateItems = await prisma.cargoItem.findMany({
-  where: { status: { not: 'ተመልሷል' } },
-  include: {
-    receipt: true,
-    loadings: true,
-    shortageNotes: { orderBy: { createdAt: 'desc' }, take: 1 } // 👈 አዲስ - የቅናሽ ምክንያት ለማምጣት
-  },
-  orderBy: { receipt: { createdAt: 'asc' } }
-});
+    // ✅ የነጋዴ ስም/ስልክ በደረሰኙ ላይ ማረም
+    if (merchantName !== undefined || merchantPhone !== undefined) {
+      await prisma.warehouseReceipt.update({
+        where: { id: cargoItem.receiptId },
+        data: {
+          ...(merchantName !== undefined ? { merchantName: String(merchantName).trim() } : {}),
+          ...(merchantPhone !== undefined ? { merchantPhone: String(merchantPhone).trim() } : {}),
+        }
+      });
+    }
 
+    const cargoUpdateData: any = {};
+    if (description !== undefined && String(description).trim()) {
+      cargoUpdateData.description = String(description).trim();
+    }
 
+    // 🆕 ቁልፍ ማስተካከያ፦ weight መቀየር ካልተቻለ (ቀድሞ ተጭኖ ከጀመረ) ሌላውን ማስተካከያ (ስም/መግለጫ)
+    // አያስተጓጉልም — ብቻ weight ለብቻው skip ይደረጋል፣ 400 ብሎ ጨርሶ አያቆምም
+    let weightSkipped = false;
+    if (weight !== undefined && !cargoItem.isMultiPackage) {
+      const hasActiveLoadings = cargoItem.loadings.some((l: any) => l.isActive);
+      const newWeight = Number(weight);
+      if (hasActiveLoadings) {
+        weightSkipped = true;
+      } else if (newWeight > 0) {
+        cargoUpdateData.weight = newWeight;
+      }
+    }
 
-    const pendingRows = candidateItems
-  .map((item: any) => ({ item, remaining: computeRemaining(item) }))
-  .filter(({ remaining }: any) => remaining.remainingWeight > 0)
-  .map(({ item, remaining }: any) => {
-    let displayDescription = item.description;
+    if (Object.keys(cargoUpdateData).length > 0) {
+      await prisma.cargoItem.update({ where: { id: cargoItemId }, data: cargoUpdateData });
+    }
 
-
-if (item.isMultiPackage) {
-  displayDescription = updateDescriptionQuantity(item.description, remaining.remainingPkgCount);
-} else if (remaining.remainingWeight < item.weight) {
-  // ✅ ሁልጊዜ ከ ledger (loadings) በትክክል ከሚሰላው ቀሪ ክብደት ተነስተን የቀረውን ቁጥር እናሰላለን፤
-  // ይሄ ማንኛውም አይነት ጭነት/ማውረድ ጥምረት ቢፈጠር (ብዙ መኪኖች፣ ከፊል ማውረድ ወዘተ) ሁልጊዜ ራሱን በራሱ ያስተካክላል
-  const originalQty = parseLeadingQty(item.description);
-  if (originalQty !== null) {
-    const remainingQty = Math.max(0, Math.round(originalQty * remaining.remainingWeight / item.weight));
-    displayDescription = updateDescriptionQuantity(item.description, remainingQty);
-  }
-}
-
-    return {
-  id: item.id,
-  receiptId: item.receiptId,
-  receiptNo: item.receipt.receiptNo,
-  dateIn: item.receipt.ethDate,
-  merchantName: item.receipt.merchantName,
-  merchantPhone: item.receipt.merchantPhone,
-  description: displayDescription,
-  category: item.category,
-  isMultiPackage: item.isMultiPackage,
-  weight: remaining.remainingWeight,
-  remainingPackages: remaining.remainingPkgs,
-  shortageReason: item.shortageNotes?.[0]?.reason || null,
-  // 👈 አዲስ - መዝጋቢው ሲቀበል የገባው መረጃ (እቃው ገና ሲገባ ማን እንደወረደው/በየትኛው ታርጋ)
-  intakeLoaderType: item.loaderType || null,
-  intakeCarPlate: item.receipt.carPlate || null
-};
-  });
-  const search = ((req.query.search as string) || '').trim().toLowerCase();
-const filteredRows = search
-  ? pendingRows.filter((r: any) =>
-      (r.merchantName || '').toLowerCase().includes(search) ||
-      (r.merchantPhone || '').toLowerCase().includes(search) ||
-      (r.receiptNo || '').toLowerCase().includes(search)
-    )
-  : pendingRows;
-
-const total = filteredRows.length;
-const paged = filteredRows.slice((page - 1) * pageSize, page * pageSize);
-
-res.json({
-  success: true,
-  page,
-  pageSize,
-  total,
-  totalPages: Math.max(1, Math.ceil(total / pageSize)),
-  data: paged
-});
+    res.json({
+      success: true,
+      message: weightSkipped
+        ? '✔️ ስም/መግለጫ ተስተካክሏል (እቃው ተጭኖ ስለጀመረ ክብደት አልተቀየረም)'
+        : '✔️ ማስተካከያው ተመዝግቧል'
+    });
   } catch (error: any) {
-    console.error('❌ የመጋዘን እቃዎችን ማምጣት አልተቻለም:', error);
-    res.status(500).json({ success: false, error: 'የመጋዘን እቃዎችን ማምጣት አልተቻለም' });
+    console.error('❌ ማስተካከል አልተቻለም:', error);
+    res.status(500).json({ success: false, error: 'ማስተካከል አልተቻለም' });
   }
 });
-
 
 // GET /api/loading/dashboard-stats/:truckId — ለ "ንቁ የጭነት ገጽ" ላይ ላለው ዳሽቦርድ
 router.get('/dashboard-stats/:truckId', async (req: Request, res: Response) => {
