@@ -421,7 +421,7 @@ useEffect(() => {
 
         /* 🖨️ 1 ገፅ ብቻ እንዲወጣ እና ለPOS(80mm) ማተሚያ የተስተካከለ PRINT CSS */
         @page {
-          size: 80mm auto;
+          size: 58mm auto;
           margin: 0;
         }
 
@@ -471,7 +471,7 @@ useEffect(() => {
           }
 
           .pos-print-area > div {
-            width: 80mm !important;
+            width: 58mm !important;
             margin: 0 auto !important;
             border: none !important;
             box-shadow: none !important;
@@ -849,7 +849,7 @@ useEffect(() => {
               <div
                 ref={printRef}
                 style={{
-                  width: '80mm',
+                  width: '58mm',
                   backgroundColor: '#fff',
                   padding: '10px 8px',
                   border: '1px dashed #666',
