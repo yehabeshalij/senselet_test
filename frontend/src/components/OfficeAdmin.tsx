@@ -244,9 +244,9 @@ function Achievement1() {
               letef={dashboardStats.warehouseLetef} derek={dashboardStats.warehouseDerek}
               footerLabel="ጠቅላላ ቀሪ ድምር" footerValue={`${dashboardStats.warehouseLetef + dashboardStats.warehouseDerek} ኪ.ግ`} footerColor="#d97706"
               extra={`አጠቃላይ ኩንታል፦ ${(((dashboardStats.warehouseLetef + dashboardStats.warehouseDerek) + dashboardStats.totalLoadedWeight) / 100).toFixed(2)} ኩ.ል`} />
-            <DashCard color="#0891b2" bg="linear-gradient(135deg, #ecfeff 0%, #cffafe 100%)" icon="📥" title="መኪናው ጭኖት የመጣው (ትራንዚት)"
+            <DashCard color="#0891b2" bg="linear-gradient(135deg, #ecfeff 0%, #cffafe 100%)" icon="📥" title="መኪናው ጭኖት የመጣው "
               letef={dashboardStats.truckLetef} derek={dashboardStats.truckDerek} />
-            <DashCard color="#4f46e5" bg="linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)" icon="👥" title="ከውጭ ጫኞች የተጫነ (ኮንትራት)"
+            <DashCard color="#4f46e5" bg="linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%)" icon="👥" title="ውጭ ጫኞች የተጫነ "
               letef={dashboardStats.externalLetef} derek={dashboardStats.externalDerek} />
             <div style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 100%)', padding: '15px', borderRadius: '12px', borderLeft: '6px solid #10b981', color: '#fff', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
               <div style={{ position: 'absolute', right: '-10px', bottom: '-10px', fontSize: '64px', opacity: 0.05 }}>🧮</div>
