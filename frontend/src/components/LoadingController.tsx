@@ -378,7 +378,7 @@ const removeActiveTruck = async (index: number) => {
         loaderStaff: truck.loaderStaff, markSaved: true
       });
       setActiveTrucks(prev => prev.map((t, idx) => idx === index ? { ...t, ...res.data } : t));
-      showToast(`📢 የመኪና ታርጋ ${truck.plateNumber} (${truck.truckType}) በተሳካ ሁኔታ ተቀምጧል!`, 'success');
+      showToast(`📢 የመኪና ታርጋ ${truck.plateNumber} (${truck.truckType}) ተመዝግቧል!`, 'success');
     } catch (e) { showApiError(e); }
   };
 
@@ -430,7 +430,7 @@ const removeActiveTruck = async (index: number) => {
       if (row.isMultiPackage) {
         const chosenPkgs = row.remainingPackages.filter(p => selectedPackages[p.id]);
         if (chosenPkgs.length === 0) {
-          showToast('⚠️ እባክዎ መጀመሪያ ከታች ካሉት እሽጎች (ኬሻዎች) ለመጫን የፈለጉትን ቼክ ማርክ ያድርጉ!', 'error');
+          showToast('⚠️ እባክዎ መጀመሪያ ከታች ካሉት እቃዎች ለመጫን የፈለጉትን ቼክ ማርክ ያድርጉ!', 'error');
           return;
         }
         const res = await apiPost(`/trucks/${targetTruckId}/load-batch`, {
@@ -809,7 +809,7 @@ const togglePayoutCollapse = (truckId: string) => {
 
                 <span style={{ fontSize: '11px', color: isTruckSaved ? '#16a34a' : '#d97706', fontWeight: 'bold', backgroundColor: isTruckSaved ? '#dcfce7' : '#fffbeb', padding: '5px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '5px' }}>
                   <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: isTruckSaved ? '#16a34a' : '#d97706', display: 'inline-block' }}></span>
-                  {isTruckSaved ? '● መረጃው ተመዝግቧል (Active)' : '● አልተመዘገበም - እባክዎ ፎርሙን ሞልተው ሴቭ ያድርጉ'}
+                  {isTruckSaved ? '● መኪና ተመዝግቧል (Active)' : '● አልተመዘገበም - እባክዎ ፎርሙን ሞልተው ሴቭ ያድርጉ'}
                 </span>
               </div>
             </div>
