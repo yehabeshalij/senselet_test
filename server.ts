@@ -40,6 +40,11 @@ validateEnv();
 
 const app = express();
 
+// const app = express();
+app.set('trust proxy', 1);
+
+app.get('/health', (_req, res) => res.status(200).json({ status: 'ok' }));
+
 const ownerPinLimiter = rateLimit({
   windowMs: 5 * 60 * 1000,
   max: 10,
@@ -87,7 +92,7 @@ if (!AFROMESSAGE_TOKEN || !AFROMESSAGE_IDENTIFIER) {
 }
 
 // 🆕 Owner PIN — OFFICE ብቻ እንዲሞክር
-app.post('/api/owner/verify-pin', requireStaffAuth, requireRole('OFFICE'), (req: Request, res: Response) => {
+app.post('/api/owner/verify-pin',  ownerPinLimiter , requireStaffAuth, requireRole('OFFICE'), (req: Request, res: Response) => {
   const { pin } = req.body;
   const correctPin = process.env.OWNER_PIN;
   if (!correctPin) {
@@ -554,7 +559,19 @@ app.post('/api/sms/send', requireStaffAuth, requireRole('MERCHANT_SMS', 'OFFICE'
 // ==========================================
 // 🚀 SERVER PORT
 // ==========================================
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+// const PORT = process.env.PORT || 5000;
+// app.listen(PORT, () => {
+//   console.log(`🚀 ሰርቨር በፖርት ${PORT} ላይ ስራ ጀምሯል`);
+// });
+
+// ከሁሉም API routes በኋላ፣ app.listen በፊት
+// const frontendDist = path.join(process.cwd(), 'frontend', 'dist');
+// app.use(express.static(frontendDist));
+// app.get(/^\/(?!api|uploads|health).*/, (_req, res) => {
+//   res.sendFile(path.join(frontendDist, 'index.html'));
+// });
+
+const PORT = Number(process.env.PORT) || 5000;
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 ሰርቨር በፖርት ${PORT} ላይ ስራ ጀምሯል`);
 });

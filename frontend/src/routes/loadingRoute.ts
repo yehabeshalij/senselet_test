@@ -112,7 +112,7 @@ router.get('/warehouse-items', async (req: Request, res: Response) => {
 
     const pendingRows = candidateItems
   .map((item: any) => ({ item, remaining: computeRemaining(item) }))
-  .filter(({ remaining }: any) => remaining.remainingWeight > 0)
+  .filter(({ remaining }: any) => remaining.remainingWeight > -0.1)
   .map(({ item, remaining }: any) => {
     let displayDescription = item.description;
 
