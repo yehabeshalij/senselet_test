@@ -1,5 +1,7 @@
 export const API_ORIGIN: string =
   (import.meta as any).env?.VITE_API_ORIGIN || 'http://localhost:5000';
+  (import.meta as any).env?.VITE_API_ORIGIN || 'https://yimenelogistics.app.aletcloud.com';
+
 
 // 🔑 ጊዜያዊ ጥበቃ (ሙሉ login እስክንገነባ ድረስ) — sensitive routes ላይ ብቻ ይፈተሻል
 export const APP_SHARED_KEY: string = (import.meta as any).env?.VITE_APP_KEY || '';
