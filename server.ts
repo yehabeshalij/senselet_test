@@ -54,6 +54,8 @@ const ownerPinLimiter = rateLimit({
 
 // 🔒 CORS configuration — የተፈቀዱ Frontend origins
 const allowedOrigins = [
+  'https://yimenelogistics.app.aletcloud.com',
+  'https://backend1.app.aletcloud.com',
   'https://senselet-test.vercel.app',
   'https://senselet-test-git-main-alexos-projects-91db6b69.vercel.app',
   'https://yimenelogistics.app.aletcloud.com',
