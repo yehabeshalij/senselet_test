@@ -56,6 +56,8 @@ const ownerPinLimiter = rateLimit({
 const allowedOrigins = [
   'https://senselet-test.vercel.app',
   'https://senselet-test-git-main-alexos-projects-91db6b69.vercel.app',
+  'https://yimenelogistics.app.aletcloud.com/',
+  'https://backend.app.aletcloud.com/',
   'http://localhost:5173',
   ...(process.env.FRONTEND_ORIGIN ? process.env.FRONTEND_ORIGIN.split(',').map(s => s.trim()) : [])
 ].filter(Boolean);
