@@ -354,9 +354,9 @@ useEffect(() => {
         }
 
       } else {
-                if (result.receiptNoChanged) {
-          showNotification(`⚠️ ቁጥሩ ተይዞ ስለነበር አዲስ ቁጥር ተሰጥቷል፦ ${result.data?.receiptNo}`, 'error');
-        }
+        //         if (result.receiptNoChanged) {
+        //   showNotification(`⚠️ ቁጥሩ ተይዞ ስለነበር አዲስ ቁጥር ተሰጥቷል፦ ${result.data?.receiptNo}`, 'error');
+        // }
         showNotification(`❌ መረጃውን ማስገባት አልተቻለም፦ ${result.message || 'ስህተት አለ'}`, 'error');
       }
     } catch (error) {
