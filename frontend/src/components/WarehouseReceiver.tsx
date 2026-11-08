@@ -112,22 +112,35 @@ useEffect(() => {
   const [receiptNo, setReceiptNo] = useState<string>("№ 04300");
 
   // 🎯 ከኤፒአይህ (/api/warehouse/receipts) የመጨረሻውን የደረሰኝ ቁጥር ማምጫ
-  const fetchLatestReceiptNo = async () => {
-    try {
-      // const res = await fetch('WAREHOUSE_API_BASE/warehouse/receipts');
-      const res = await fetch(`${WAREHOUSE_API_BASE}/receipts`);
-      if (res.ok) {
-        const receipts = await res.json();
-        if (receipts && receipts.length > 0) {
-          const lastReceipt = receipts[0];
-          const lastReceiptNoStr = lastReceipt.receiptNo || lastReceipt.receiptNumber || "";
-          const match = lastReceiptNoStr.match(/\d+/);
+  // const fetchLatestReceiptNo = async () => {
+  //   try {
+  //     // const res = await fetch('WAREHOUSE_API_BASE/warehouse/receipts');
+  //     const res = await fetch(`${WAREHOUSE_API_BASE}/receipts`);
+  //     if (res.ok) {
+  //       const receipts = await res.json();
+  //       if (receipts && receipts.length > 0) {
+  //         const lastReceipt = receipts[0];
+  //         const lastReceiptNoStr = lastReceipt.receiptNo || lastReceipt.receiptNumber || "";
+  //         const match = lastReceiptNoStr.match(/\d+/);
 
-          if (match) {
-            const nextNum = parseInt(match[0], 10) + 1;
-            setReceiptNo(`№ ${String(nextNum).padStart(5, '0')}`);
-          }
-        }
+  //         if (match) {
+  //           const nextNum = parseInt(match[0], 10) + 1;
+  //           setReceiptNo(`№ ${String(nextNum).padStart(5, '0')}`);
+  //         }
+  //       }
+  //     }
+  //   } catch (err) {
+  //     console.log("የደረሰኝ ቁጥር ከዳታቤዝ ማምጣት አልተቻለም፣ በቋሚው ይቀጥላል");
+  //   }
+  // };
+
+
+    const fetchLatestReceiptNo = async () => {
+    try {
+      const res = await fetch(`${WAREHOUSE_API_BASE}/next-receipt-no`);
+      if (res.ok) {
+        const json = await res.json();
+        if (json?.receiptNo) setReceiptNo(json.receiptNo);
       }
     } catch (err) {
       console.log("የደረሰኝ ቁጥር ከዳታቤዝ ማምጣት አልተቻለም፣ በቋሚው ይቀጥላል");
@@ -137,6 +150,13 @@ useEffect(() => {
   useEffect(() => {
     fetchLatestReceiptNo();
   }, []);
+
+    useEffect(() => {
+    const t = setInterval(() => {
+      if (!isFormStarted && !isPrinted) fetchLatestReceiptNo();
+    }, 8000);
+    return () => clearInterval(t);
+  }, [isFormStarted, isPrinted]);
 
   const addCargoRow = () => {
     const newId = Date.now().toString() + Math.random().toString(36).substring(2, 5);
@@ -296,6 +316,9 @@ useEffect(() => {
         }
 
       } else {
+                if (result.receiptNoChanged) {
+          showNotification(`⚠️ ቁጥሩ ተይዞ ስለነበር አዲስ ቁጥር ተሰጥቷል፦ ${result.data?.receiptNo}`, 'error');
+        }
         showNotification(`❌ መረጃውን ማስገባት አልተቻለም፦ ${result.message || 'ስህተት አለ'}`, 'error');
       }
     } catch (error) {
@@ -304,7 +327,15 @@ useEffect(() => {
     }
   };
 
-  const handlePrint = () => {
+  // const handlePrint = () => {
+  //   setIsPrinted(true);
+  //   window.print();
+  //   showNotification("🖨️ ደረሰኙ ታትሟል! አሁን መረጃውን መመዝገብ ይችላሉ።", 'success');
+  // };
+
+    const handlePrint = async () => {
+    await fetchLatestReceiptNo();
+    await new Promise((r) => setTimeout(r, 200)); // ቁጥሩ በስክሪኑ ላይ እንዲዘመን
     setIsPrinted(true);
     window.print();
     showNotification("🖨️ ደረሰኙ ታትሟል! አሁን መረጃውን መመዝገብ ይችላሉ።", 'success');

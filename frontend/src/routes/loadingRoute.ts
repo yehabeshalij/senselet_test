@@ -98,15 +98,26 @@ router.get('/warehouse-items', async (req: Request, res: Response) => {
     const pageSize = Math.max(1, Number(req.query.pageSize) || 20);
 
 
+//     const candidateItems = await prisma.cargoItem.findMany({
+//   where: { status: { not: 'ተመልሷል' } },
+//   include: {
+//     receipt: true,
+//     loadings: true,
+//     shortageNotes: { orderBy: { createdAt: 'desc' }, take: 1 } // 👈 አዲስ - የቅናሽ ምክንያት ለማምጣት
+//   },
+//   orderBy: { receipt: { createdAt: 'asc' } }
+// });
+
     const candidateItems = await prisma.cargoItem.findMany({
-  where: { status: { not: 'ተመልሷል' } },
-  include: {
-    receipt: true,
-    loadings: true,
-    shortageNotes: { orderBy: { createdAt: 'desc' }, take: 1 } // 👈 አዲስ - የቅናሽ ምክንያት ለማምጣት
-  },
-  orderBy: { receipt: { createdAt: 'asc' } }
-});
+      where: { status: { not: 'ተመልሷል' } },
+      include: {
+        receipt: true,
+        loadings: true,
+        shortageNotes: { orderBy: { createdAt: 'desc' }, take: 1 }
+      },
+      // 🆕 ቀድሞ የገባ ቀድሞ ይጫን (FIFO) — ተመሳሳይ ሰዓት ቢሆን እንኳ ቦታ እንዳይቀያየር ሁለተኛ መለያ
+      orderBy: [{ receipt: { createdAt: 'asc' } }, { id: 'asc' }]
+    });
 
 
 

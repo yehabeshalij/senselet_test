@@ -285,6 +285,26 @@ app.get('/api/quickexpense/deleted', requireStaffAuth, requireRole('OFFICE', 'OW
 // 📌 SECTION 2: WAREHOUSE RECEIVER & CARGO APIs
 // ==========================================
 
+async function getNextReceiptNo(): Promise<string> {
+  const all = await (prisma as any).warehouseReceipt.findMany({ select: { receiptNo: true } });
+  let max = 4300; // የመጀመሪያው ቁጥር № 04301 እንዲሆን
+  for (const r of all) {
+    const m = String(r.receiptNo || '').match(/\d+/);
+    if (m) max = Math.max(max, parseInt(m[0], 10));
+  }
+  return `№ ${String(max + 1).padStart(5, '0')}`;
+}
+
+// 🆕 ቀጣዩን ቁጥር ለ frontend ማሳያ
+app.get('/api/warehouse/next-receipt-no', requireStaffAuth, requireRole('RECEIVER', 'OFFICE', 'OWNER'), async (_req, res) => {
+  try {
+    return res.json({ success: true, receiptNo: await getNextReceiptNo() });
+  } catch (error) {
+    console.error("❌ ቀጣይ ቁጥር ማሰላት አልተቻለም:", error);
+    return res.status(500).json({ success: false, error: "ቁጥር ማሰላት አልተቻለም" });
+  }
+});
+
 app.post('/api/warehouse/receive', requireStaffAuth, requireRole('RECEIVER', 'OFFICE', 'OWNER'), async (req, res) => {
   try {
     const {
@@ -324,11 +344,17 @@ app.post('/api/warehouse/receive', requireStaffAuth, requireRole('RECEIVER', 'OF
       where: { receiptNo: finalReceiptNo }
     });
 
+    // if (existing) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: `⚠️ የደረሰኝ ቁጥር ${finalReceiptNo} ቀደም ብሎ ተመዝግቧል! ድግግሞሽ አይፈቀድም።`
+    //   });
+    // }
+
+    let receiptNoChanged = false;
     if (existing) {
-      return res.status(400).json({
-        success: false,
-        message: `⚠️ የደረሰኝ ቁጥር ${finalReceiptNo} ቀደም ብሎ ተመዝግቧል! ድግግሞሽ አይፈቀድም።`
-      });
+      finalReceiptNo = await getNextReceiptNo();
+      receiptNoChanged = true;
     }
 
     const now = new Date();
@@ -339,38 +365,90 @@ app.post('/api/warehouse/receive', requireStaffAuth, requireRole('RECEIVER', 'OF
 
     const newReceipt = await (prisma as any).warehouseReceipt.create({
       data: {
-        receiptNo: finalReceiptNo,
-        ethDate: dateFormatted,
-        time: currentTime,
-        merchantName: merchantName || "ያልተጠቀሰ",
-        merchantPhone: merchantPhone ? String(merchantPhone).trim() : "",
-        senderName: senderName || "ያልተጠቀሰ",
-        senderPhone: senderPhone ? String(senderPhone).trim() : "",
-        receiverName: receiverName || "ያልተጠቀሰ",
-        carPlate: carPlate ? String(carPlate).trim().toUpperCase() : "",
-        totalWeight: Number(totalWeight) || 0,
-        items: {
-          create: Array.isArray(cargoList) ? cargoList.map((item: any) => ({
-            description: item.description || 'እቃ',
-            weight: Number(item.weight) || 0,
-            category: item.category || 'ደረቅ',
-            isLoaded: item.isLoaded || false,
-            loaderType: item.loaderType || '',
-            isMultiPackage: item.isMultiPackage || false,
-            rawWeightsInput: item.rawWeightsInput || '',
-            status: 'በመጋዘን ያለ',
-            packages: item.packages ? JSON.parse(JSON.stringify(item.packages)) : []
-          })) : []
-        }
-      },
-      include: {
-        items: true
+    //     receiptNo: finalReceiptNo,
+    //     ethDate: dateFormatted,
+    //     time: currentTime,
+    //     merchantName: merchantName || "ያልተጠቀሰ",
+    //     merchantPhone: merchantPhone ? String(merchantPhone).trim() : "",
+    //     senderName: senderName || "ያልተጠቀሰ",
+    //     senderPhone: senderPhone ? String(senderPhone).trim() : "",
+    //     receiverName: receiverName || "ያልተጠቀሰ",
+    //     carPlate: carPlate ? String(carPlate).trim().toUpperCase() : "",
+    //     totalWeight: Number(totalWeight) || 0,
+    //     items: {
+    //       create: Array.isArray(cargoList) ? cargoList.map((item: any) => ({
+    //         description: item.description || 'እቃ',
+    //         weight: Number(item.weight) || 0,
+    //         category: item.category || 'ደረቅ',
+    //         isLoaded: item.isLoaded || false,
+    //         loaderType: item.loaderType || '',
+    //         isMultiPackage: item.isMultiPackage || false,
+    //         rawWeightsInput: item.rawWeightsInput || '',
+    //         status: 'በመጋዘን ያለ',
+    //         packages: item.packages ? JSON.parse(JSON.stringify(item.packages)) : []
+    //       })) : []
+    //     }
+    //   },
+    //   include: {
+    //     items: true
+    //   }
+    // });
+
+
+    receiptNo: no,
+      ethDate: dateFormatted,
+      time: currentTime,
+      merchantName: merchantName || "ያልተጠቀሰ",
+      merchantPhone: merchantPhone ? String(merchantPhone).trim() : "",
+      senderName: senderName || "ያልተጠቀሰ",
+      senderPhone: senderPhone ? String(senderPhone).trim() : "",
+      receiverName: receiverName || "ያልተጠቀሰ",
+      carPlate: carPlate ? String(carPlate).trim().toUpperCase() : "",
+      totalWeight: Number(totalWeight) || 0,
+      items: {
+        create: Array.isArray(cargoList) ? cargoList.map((item: any) => ({
+          description: item.description || 'እቃ',
+          weight: Number(item.weight) || 0,
+          category: item.category || 'ደረቅ',
+          isLoaded: item.isLoaded || false,
+          loaderType: item.loaderType || '',
+          isMultiPackage: item.isMultiPackage || false,
+          rawWeightsInput: item.rawWeightsInput || '',
+          status: 'በመጋዘን ያለ',
+          packages: item.packages ? JSON.parse(JSON.stringify(item.packages)) : []
+        })) : []
       }
     });
+
+    let newReceipt: any = null;
+    for (let attempt = 0; attempt < 5; attempt++) {
+      try {
+        newReceipt = await (prisma as any).warehouseReceipt.create({
+          data: buildData(finalReceiptNo),
+          include: { items: true }
+        });
+        break;
+      } catch (e: any) {
+        if (e?.code === 'P2002') { // ሌላ መሳሪያ ቁጥሩን ቀድሞ ወስዶታል
+          finalReceiptNo = await getNextReceiptNo();
+          receiptNoChanged = true;
+          continue;
+        }
+        throw e;
+      }
+    }
+    if (!newReceipt) throw new Error('የደረሰኝ ቁጥር ማግኘት አልተቻለም');
+
+    // return res.status(201).json({
+    //   success: true,
+    //   message: "መረጃው በስኬት ዳታቤዝ ገብቷል!",
+    //   data: newReceipt
+    // });
 
     return res.status(201).json({
       success: true,
       message: "መረጃው በስኬት ዳታቤዝ ገብቷል!",
+      receiptNoChanged,
       data: newReceipt
     });
 
@@ -464,7 +542,8 @@ app.get('/api/warehouse/receipts', requireStaffAuth, requireRole('RECEIVER', 'ME
   try {
     const receipts = await (prisma as any).warehouseReceipt.findMany({
       include: { items: true },
-      orderBy: { createdAt: 'desc' }
+      // orderBy: { createdAt: 'desc' }
+            orderBy: { createdAt: (req.query.order === 'asc' ? 'asc' : 'desc') }
     });
     return res.json(receipts);
   } catch (error) {

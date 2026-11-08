@@ -994,6 +994,13 @@ const togglePayoutCollapse = (truckId: string) => {
 
                       return (
                         <React.Fragment key={item.id}>
+                          {(idxOnPage === 0 || warehouseRows[idxOnPage - 1].dateIn !== item.dateIn) && (
+    <tr>
+      <td colSpan={12} style={{ backgroundColor: '#0f172a', color: '#fff', padding: '6px 12px', fontWeight: 'bold', fontSize: '12px', textAlign: 'left' }}>
+        📅 {item.dateIn}
+      </td>
+    </tr>
+  )}
                           <tr style={{ backgroundColor: rowIndex % 2 === 0 ? '#fff' : '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
                             <td style={{ padding: '10px 4px', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 'bold', color: '#64748b', fontSize: '11px' }}>{rowIndex + 1}</td>
                             <td style={{ padding: '10px 4px', border: '1px solid #e2e8f0', fontWeight: 'bold', color: '#dc2626', fontSize: '10px', wordBreak: 'break-word' }}>{item.dateIn}</td>
@@ -1120,6 +1127,7 @@ const togglePayoutCollapse = (truckId: string) => {
                           )}
                         </React.Fragment>
                       );
+                      
                     })}
                   </tbody>
                 </table>
