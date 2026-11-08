@@ -151,12 +151,7 @@ useEffect(() => {
     fetchLatestReceiptNo();
   }, []);
 
-    useEffect(() => {
-    const t = setInterval(() => {
-      if (!isFormStarted && !isPrinted) fetchLatestReceiptNo();
-    }, 8000);
-    return () => clearInterval(t);
-  }, [isFormStarted, isPrinted]);
+ 
 
   const addCargoRow = () => {
     const newId = Date.now().toString() + Math.random().toString(36).substring(2, 5);
@@ -268,6 +263,23 @@ useEffect(() => {
     carPlate.length > 0 ||
     cargoList.some(item => item.description.length > 0 || item.weight > 0);
 
+      const isFormStarted =
+    formData.merchantName.length > 0 ||
+    formData.merchantPhone.length > 0 ||
+    formData.senderName.length > 0 ||
+    formData.senderPhone.length > 0 ||
+    formData.receiverName.length > 0 ||
+    carPlate.length > 0 ||
+    cargoList.some(item => item.description.length > 0 || item.weight > 0);
+
+  // 🔄 ፎርሙ ገና ካልተጀመረ ብቻ ቀጣዩን የደረሰኝ ቁጥር በየ 8 ሰከንዱ ያድሳል (ሌላ መሳሪያ ሲመዘግብ እንዲዘምን)
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!isFormStarted && !isPrinted) fetchLatestReceiptNo();
+    }, 8000);
+    return () => clearInterval(t);
+  }, [isFormStarted, isPrinted]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -308,9 +320,19 @@ useEffect(() => {
 
       const result = await response.json();
 
+      // if (response.ok) {
+      //   const savedReceiptNo = result.data?.receiptNo || receiptNo;
+      //   showNotification(`🚀 መረጃው ተመዝግቧል! የደረሰኝ ቁጥር፦ (${savedReceiptNo})`, 'success');
+
+      //   setIsPrinted(false);
+
       if (response.ok) {
         const savedReceiptNo = result.data?.receiptNo || receiptNo;
-        showNotification(`🚀 መረጃው ተመዝግቧል! የደረሰኝ ቁጥር፦ (${savedReceiptNo})`, 'success');
+        if (result.receiptNoChanged) {
+          showNotification(`⚠️ ቁጥሩ ተይዞ ስለነበር አዲስ ቁጥር ተሰጥቷል፦ ${savedReceiptNo} (የታተመው ትኬት ቁጥር ይለያል!)`, 'error');
+        } else {
+          showNotification(`🚀 መረጃው ተመዝግቧል! የደረሰኝ ቁጥር፦ (${savedReceiptNo})`, 'success');
+        }
 
         setIsPrinted(false);
         setCargoList([
