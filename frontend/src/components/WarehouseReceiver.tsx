@@ -247,6 +247,16 @@ useEffect(() => {
     setTimeout(() => setToast(null), 3000);
   };
 
+    // 🆕 የእቃ መግለጫ በቁጥር (ብዛት) መጀመር አለበት፣ ምሳሌ፦ "1 ኬሻ ልብስ"
+  const isValidDescription = (desc: string): boolean => {
+    const m = desc.trim().match(/^(\d+)\s*(.*)$/);
+    return !!m && Number(m[1]) > 0 && m[2].trim().length > 0;
+  };
+
+  const findInvalidCargoIndex = (): number =>
+    cargoList.findIndex(item => !isValidDescription(item.description));
+
+
   const totalWeight = cargoList.reduce((sum, item) => sum + item.weight, 0);
 
   const isFormStarted =
@@ -260,6 +270,12 @@ useEffect(() => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+        const badIdx = findInvalidCargoIndex();
+    if (badIdx !== -1) {
+      showNotification(`⚠️ እቃ ${badIdx + 1}፦ መግለጫው በቁጥር መጀመር አለበት (ምሳሌ፦ 1 ኬሻ ልብስ)!`, 'error');
+      return;
+    }
 
     if (!isPrinted) {
       showNotification("⚠️ እባክዎ መጀመሪያ ደረሰኙን ያትሙ (POS Print)!", 'error');
@@ -333,12 +349,17 @@ useEffect(() => {
   //   showNotification("🖨️ ደረሰኙ ታትሟል! አሁን መረጃውን መመዝገብ ይችላሉ።", 'success');
   // };
 
-    const handlePrint = async () => {
+   const handlePrint = async () => {
+    const badIdx = findInvalidCargoIndex();
+    if (badIdx !== -1) {
+      showNotification(`⚠️ እቃ ${badIdx + 1}፦ መግለጫው በቁጥር መጀመር አለበት (ምሳሌ፦ 1 ኬሻ ልብስ)!`, 'error');
+      return;
+    }
     await fetchLatestReceiptNo();
     await new Promise((r) => setTimeout(r, 200)); // ቁጥሩ በስክሪኑ ላይ እንዲዘመን
     setIsPrinted(true);
     window.print();
-    showNotification("🖨️ ደረሰኙ ታትሟል! አሁን መረጃውን መመዝገብ ይችላሉ።", 'success');
+    showNotification("🖨️ ደረሰኙ ታትሟል! አሁን መረጃውን መመዝገብ ይቻላል።", 'success');
   };
 
   return (
@@ -631,14 +652,27 @@ useEffect(() => {
                       <div key={item.id} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
                         <div className="cargo-row-item">
 
-                          <input
+                          {/* <input
                             type="text"
                             placeholder="ምሳሌ፦ 1 ካርቶን / 1 ቋጠሮ ልብስ"
                             required
                             value={item.description}
                             onChange={e => handleCargoChange(index, 'description', e.target.value)}
                             style={{ flex: '1.5', minWidth: '140px', padding: '8px 12px', border: '1px solid #94a3b8', borderRadius: '4px', height: '40px', boxSizing: 'border-box', fontSize: '14px' }}
-                          />
+                          /> */}
+
+                          <input
+  type="text"
+  placeholder="ምሳሌ፦ 1 ኬሻ ልብስ (መጀመሪያ ብዛት ቁጥር)"
+  required
+  value={item.description}
+  onChange={e => handleCargoChange(index, 'description', e.target.value)}
+  style={{
+    flex: '1.5', minWidth: '140px', padding: '8px 12px',
+    border: item.description.trim() && !isValidDescription(item.description) ? '2px solid #ef4444' : '1px solid #94a3b8',
+    borderRadius: '4px', height: '40px', boxSizing: 'border-box', fontSize: '14px'
+  }}
+/>
 
                           <button
                             type="button"
@@ -706,6 +740,12 @@ useEffect(() => {
                             <button type="button" className="tap-btn" onClick={() => removeCargoRow(item.id)} style={{ backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '8px 14px', cursor: 'pointer', fontWeight: 'bold', borderRadius: '4px', height: '40px' }}>X</button>
                           )}
                         </div>
+
+                        {item.description.trim() && !isValidDescription(item.description) && (
+  <div style={{ fontSize: '11px', color: '#dc2626', fontWeight: 'bold', paddingLeft: '8px' }}>
+    ⚠️ ከፊት የእቃ ብዛት ቁጥር ያስፈልጋል ፤ ምሳሌ፦ "1 ኬሻ(ካርቶን)..."
+  </div>
+)}
 
                         {item.isMultiPackage && item.packages && item.packages.length > 0 && (
                           <div style={{ width: '100%', marginTop: '-3px', marginBottom: '10px', fontSize: '12px', color: '#166534', fontWeight: 'bold', paddingLeft: '8px' }}>

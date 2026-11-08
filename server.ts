@@ -481,6 +481,19 @@ app.post('/api/warehouse/receive', requireStaffAuth, requireRole('RECEIVER', 'OF
       cargoList
     } = req.body;
 
+    if (Array.isArray(cargoList)) {
+      const badIdx = cargoList.findIndex((it: any) => {
+        const m = String(it?.description || '').trim().match(/^(\d+)\s*(.*)$/);
+        return !m || Number(m[1]) <= 0 || m[2].trim().length === 0;
+      });
+      if (badIdx !== -1) {
+        return res.status(400).json({
+          success: false,
+          message: `⚠️ እቃ ${badIdx + 1}፦ መግለጫው በቁጥር መጀመር አለበት (ምሳሌ፦ 1 ኬሻ (ካርቶን)...)`
+        });
+      }
+    }
+
     let finalReceiptNo = receiptNo ? String(receiptNo).trim() : "";
 
     if (!finalReceiptNo) {
