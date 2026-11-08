@@ -263,14 +263,7 @@ useEffect(() => {
     carPlate.length > 0 ||
     cargoList.some(item => item.description.length > 0 || item.weight > 0);
 
-      const isFormStarted =
-    formData.merchantName.length > 0 ||
-    formData.merchantPhone.length > 0 ||
-    formData.senderName.length > 0 ||
-    formData.senderPhone.length > 0 ||
-    formData.receiverName.length > 0 ||
-    carPlate.length > 0 ||
-    cargoList.some(item => item.description.length > 0 || item.weight > 0);
+     
 
   // 🔄 ፎርሙ ገና ካልተጀመረ ብቻ ቀጣዩን የደረሰኝ ቁጥር በየ 8 ሰከንዱ ያድሳል (ሌላ መሳሪያ ሲመዘግብ እንዲዘምን)
   useEffect(() => {
