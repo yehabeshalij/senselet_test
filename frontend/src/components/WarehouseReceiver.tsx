@@ -1,7 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import ContactDirectoryModal from './ContactDirectoryModal';
-import { WAREHOUSE_API_BASE, LOADING_API_BASE } from '../config/api';
+// import { WAREHOUSE_API_BASE, LOADING_API_BASE } from '../config/api';
+import { WAREHOUSE_API_BASE, LOADING_API_BASE, apiFetch } from '../config/api';
 
 
 // -------------------------------------------------------------
@@ -111,6 +112,8 @@ useEffect(() => {
   // 2. የደረሰኝ ቁጥር State (ከዳታቤዝ ተጠይቆ የሚመጣ)
   const [receiptNo, setReceiptNo] = useState<string>("№ 04300");
 
+    const [receiptNoReady, setReceiptNoReady] = useState<boolean>(false); // 🆕 እውነተኛው ቁጥር ከሰርቨር እስኪመጣ false ነው
+
   // 🎯 ከኤፒአይህ (/api/warehouse/receipts) የመጨረሻውን የደረሰኝ ቁጥር ማምጫ
   // const fetchLatestReceiptNo = async () => {
   //   try {
@@ -135,16 +138,34 @@ useEffect(() => {
   // };
 
 
-    const fetchLatestReceiptNo = async () => {
+  //   const fetchLatestReceiptNo = async () => {
+  //   try {
+  //     const res = await fetch(`${WAREHOUSE_API_BASE}/next-receipt-no`);
+  //     if (res.ok) {
+  //       const json = await res.json();
+  //       if (json?.receiptNo) setReceiptNo(json.receiptNo);
+  //     }
+  //   } catch (err) {
+  //     console.log("የደረሰኝ ቁጥር ከዳታቤዝ ማምጣት አልተቻለም፣ በቋሚው ይቀጥላል");
+  //   }
+  // };
+
+    const fetchLatestReceiptNo = async (): Promise<boolean> => {
     try {
-      const res = await fetch(`${WAREHOUSE_API_BASE}/next-receipt-no`);
+      // ?t=... ብሮውዘሩ የድሮውን ምላሽ (cache) እንዳይመልስ
+      const res = await apiFetch(`${WAREHOUSE_API_BASE}/next-receipt-no?t=${Date.now()}`);
       if (res.ok) {
         const json = await res.json();
-        if (json?.receiptNo) setReceiptNo(json.receiptNo);
+        if (json?.receiptNo) {
+          setReceiptNo(json.receiptNo);
+          setReceiptNoReady(true);
+          return true;
+        }
       }
     } catch (err) {
-      console.log("የደረሰኝ ቁጥር ከዳታቤዝ ማምጣት አልተቻለም፣ በቋሚው ይቀጥላል");
+      console.log("የደረሰኝ ቁጥር ከዳታቤዝ ማምጣት አልተቻለም፣ እንደገና ይሞክራል");
     }
+    return false;
   };
 
   useEffect(() => {
@@ -271,6 +292,27 @@ useEffect(() => {
       if (!isFormStarted && !isPrinted) fetchLatestReceiptNo();
     }, 8000);
     return () => clearInterval(t);
+  }, [isFormStarted, isPrinted]);
+
+    // 🔄 ቁጥሩ ገና ካልመጣ በየ 2 ሰከንዱ ይሞክራል፤ ከመጣ በኋላ ፎርሙ ካልተጀመረ ብቻ በየ 8 ሰከንዱ ያድሳል
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!receiptNoReady || (!isFormStarted && !isPrinted)) fetchLatestReceiptNo();
+    }, receiptNoReady ? 8000 : 2000);
+    return () => clearInterval(t);
+  }, [receiptNoReady, isFormStarted, isPrinted]);
+
+  // 🔄 ወደ ገጹ ሲመለስ (ታብ/መተግበሪያ ሲቀየር) ወዲያው ያድሳል
+  useEffect(() => {
+    const refresh = () => {
+      if (document.visibilityState === 'visible' && !isFormStarted && !isPrinted) fetchLatestReceiptNo();
+    };
+    window.addEventListener('focus', refresh);
+    document.addEventListener('visibilitychange', refresh);
+    return () => {
+      window.removeEventListener('focus', refresh);
+      document.removeEventListener('visibilitychange', refresh);
+    };
   }, [isFormStarted, isPrinted]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -628,7 +670,10 @@ useEffect(() => {
             }}>
 
               <div>
-                <span style={{ fontSize: '22px', color: '#1e3a8a', fontWeight: '900' }}>{receiptNo}</span>
+                {/* <span style={{ fontSize: '22px', color: '#1e3a8a', fontWeight: '900' }}>{receiptNo}</span> */}
+                <span style={{ fontSize: '22px', color: '#1e3a8a', fontWeight: '900' }}>
+  {receiptNoReady ? receiptNo : '⏳'}
+</span>
               </div>
               <div style={{ fontSize: '12px', marginTop: '4px', fontWeight: 'bold', color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '2px' }}>
                 <div style={{ display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
